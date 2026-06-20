@@ -8,84 +8,29 @@
 </head>
 <body>
 
-  <!-- ── Home screen ─────────────────────────────────────── -->
-  <div id="home-screen" class="screen">
+  <!-- ── Game ───────────────────────────────────────────── -->
+  <div id="game-box">
 
     <h1>Time It</h1>
-    <p id="home-subtitle">How well do you know a second?</p>
 
-    <div id="mode-buttons">
-      <button id="daily-btn">Daily</button>
-      <button id="practice-btn">Practice</button>
+    <div id="target-section">
+      <div id="target-label">Target time</div>
+      <div id="target-display">—</div>
     </div>
 
-    <p id="mode-descriptions">
-      <span><strong>Daily</strong> — 5 rounds, lowest total score wins.</span><br>
-      <span><strong>Practice</strong> — one round at a time.</span>
-    </p>
+    <div id="countdown"></div>
 
-  </div>
+    <div id="message">Press Start to begin.</div>
 
-  <!-- ── Game screen ─────────────────────────────────────── -->
-  <div id="game-screen" class="screen hidden">
-
-    <div id="game-box">
-
-      <div id="round-indicator"></div>
-
-      <div id="target-section">
-        <div id="target-label">Target time</div>
-        <div id="target-display">—</div>
-      </div>
-
-      <div id="countdown"></div>
-
-      <div id="message"></div>
-
-      <div id="result-block">
-        <div id="result-title">Your time</div>
-        <div id="result-your-time"></div>
-        <div id="result-diff"></div>
-      </div>
-
-      <div id="game-buttons">
-        <button id="next-btn"></button>
-        <button id="home-btn-game">Home</button>
-      </div>
-
-      <div id="click-hint">Tap to stop</div>
-
+    <div id="result-block">
+      <div id="result-title">Your time</div>
+      <div id="result-your-time"></div>
+      <div id="result-diff"></div>
     </div>
 
-  </div>
+    <button id="play-btn">Start</button>
 
-  <!-- ── Daily results screen ────────────────────────────── -->
-  <div id="results-screen" class="screen hidden">
-
-    <div id="results-box">
-
-      <h2>Daily Results</h2>
-
-      <table id="rounds-table">
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Target</th>
-            <th>Your time</th>
-            <th>Off by</th>
-          </tr>
-        </thead>
-        <tbody id="rounds-body"></tbody>
-      </table>
-
-      <div id="total-score-block">
-        <span id="total-label">Total score</span>
-        <span id="total-value"></span>
-      </div>
-
-      <button id="home-btn-results">Home</button>
-
-    </div>
+    <div id="click-hint">Tap to stop</div>
 
   </div>
 
@@ -101,11 +46,6 @@
         <li><strong>Tap the screen</strong> when you think that exact amount of time has passed.</li>
         <li>Your score is <strong>how far off you were</strong>. Lower is better.</li>
       </ol>
-
-      <p id="howto-modes">
-        <strong>Daily</strong> — 5 rounds. Everyone gets the same times. One attempt per day.<br>
-        <strong>Practice</strong> — Play as many rounds as you like.
-      </p>
 
       <button id="howto-close">Got it</button>
 

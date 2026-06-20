@@ -14,58 +14,11 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
-  min-height: 100dvh; /* accounts for mobile browser chrome */
+  min-height: 100dvh;
   font-family: 'Courier New', monospace;
   user-select: none;
   -webkit-user-select: none;
   padding: 16px;
-}
-
-/* ─── Screen management ──────────────────────────────────── */
-
-.screen {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 24px;
-  width: 100%;
-}
-
-.hidden {
-  display: none !important;
-}
-
-/* ─── Home screen ────────────────────────────────────────── */
-
-#home-subtitle {
-  font-size: 14px;
-  color: #555;
-  letter-spacing: 0.06em;
-  text-align: center;
-}
-
-#mode-buttons {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-#mode-descriptions {
-  font-size: 13px;
-  color: #555;
-  line-height: 1.8;
-  text-align: center;
-}
-
-/* ─── Shared heading ─────────────────────────────────────── */
-
-h1 {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 /* ─── Game box ───────────────────────────────────────────── */
@@ -82,23 +35,22 @@ h1 {
   gap: 20px;
   transition: background 0.1s;
   cursor: default;
-  touch-action: manipulation; /* prevents 300ms tap delay on iOS */
+  touch-action: manipulation;
 }
 
-/* Red background is added by JS when the player should click */
+/* Red background is added by JS when the player should tap */
 #game-box.active {
   background: #ff3b30;
   cursor: pointer;
 }
 
-/* ─── Round indicator (Daily only) ──────────────────────── */
+/* ─── Title ──────────────────────────────────────────────── */
 
-#round-indicator {
-  font-size: 13px;
-  letter-spacing: 0.1em;
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #555;
-  min-height: 18px;
 }
 
 /* ─── Target time display ────────────────────────────────── */
@@ -145,10 +97,10 @@ h1 {
   min-height: 20px;
 }
 
-/* ─── Round result ───────────────────────────────────────── */
+/* ─── Result ─────────────────────────────────────────────── */
 
 #result-block {
-  display: none; /* shown by JS after the player taps/clicks */
+  display: none; /* shown by JS after the player taps */
   flex-direction: column;
   align-items: center;
   gap: 8px;
@@ -180,20 +132,7 @@ h1 {
 #result-diff.ok   { color: #fd7e14; }
 #result-diff.bad  { color: #dc3545; }
 
-/* ─── In-game buttons ────────────────────────────────────── */
-
-#game-buttons {
-  display: none; /* shown by JS after a round ends */
-  gap: 12px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-#game-buttons.show {
-  display: flex;
-}
-
-/* ─── Shared button style ────────────────────────────────── */
+/* ─── Button ─────────────────────────────────────────────── */
 
 button {
   padding: 14px 32px;
@@ -205,23 +144,13 @@ button {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
-  touch-action: manipulation; /* prevents 300ms tap delay on iOS */
+  touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   min-width: 120px;
 }
 
 button:hover {
   background: #333;
-}
-
-button.secondary {
-  background: #fff;
-  color: #000;
-  border: 2px solid #000;
-}
-
-button.secondary:hover {
-  background: #f5f5f5;
 }
 
 /* ─── Tap hint (shown during active phase) ───────────────── */
@@ -232,7 +161,6 @@ button.secondary:hover {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.6;
-  text-align: center;
 }
 
 /* ─── How to play modal ──────────────────────────────────── */
@@ -277,71 +205,4 @@ button.secondary:hover {
   font-size: 14px;
   line-height: 1.6;
   color: #222;
-}
-
-#howto-modes {
-  font-size: 13px;
-  line-height: 1.8;
-  color: #444;
-  border-top: 1px solid #e0e0e0;
-  padding-top: 16px;
-}
-
-/* ─── Daily results screen ───────────────────────────────── */
-
-#results-box {
-  border: 2px solid #000;
-  width: min(520px, 100%);
-  padding: 32px 24px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 24px;
-}
-
-#results-box h2 {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-#rounds-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: clamp(12px, 3.5vw, 14px);
-}
-
-#rounds-table th,
-#rounds-table td {
-  padding: 8px 6px;
-  text-align: center;
-  border-bottom: 1px solid #e0e0e0;
-  letter-spacing: 0.03em;
-}
-
-#rounds-table th {
-  font-size: clamp(10px, 3vw, 12px);
-  text-transform: uppercase;
-  color: #555;
-}
-
-#total-score-block {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  border-top: 2px solid #000;
-  padding-top: 16px;
-}
-
-#total-label {
-  font-size: 14px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-#total-value {
-  font-size: clamp(20px, 6vw, 28px);
-  font-weight: 700;
 }
