@@ -56,11 +56,12 @@ let countdownTimer = null;
 
 // ─── Challenge state ──────────────────────────────────────
 
-let challengeId      = null;  // Firebase key for this challenge
-let challengeRef     = null;  // Firebase ref for this challenge
-let myPlayerKey      = null;  // 'player1' or 'player2'
-let opponentKey      = null;  // 'player2' or 'player1'
-let challengeStarted = false; // prevents double-starting when both ready
+let challengeId         = null;  // Firebase key for this challenge
+let challengeRef        = null;  // Firebase ref for this challenge
+let myPlayerKey         = null;  // 'player1' or 'player2'
+let opponentKey         = null;  // 'player2' or 'player1'
+let challengeStarted    = false; // prevents double-starting when both ready
+let challengeGeneration = 0;     // increments on rematch so both players detect the reset
 
 // ─── DOM references ───────────────────────────────────────
 
@@ -244,29 +245,31 @@ function joinChallenge(id) {
 
 // ─── Challenge lobby ──────────────────────────────────────
 
-function showChallengeLobby() {
+function showChallengeLobby(isRematch = false) {
   const isP1    = myPlayerKey === 'player1';
   const linkUrl = `${window.location.origin}${window.location.pathname}?c=${challengeId}`;
 
-  document.getElementById('lobby-title').textContent =
-    isP1 ? 'Challenge Created' : "You've been challenged!";
+  document.getElementById('lobby-title').textContent = isRematch
+    ? 'Rematch!'
+    : isP1 ? 'Challenge Created' : "You've been challenged!";
 
-  document.getElementById('lobby-status').textContent =
-    isP1 ? 'Waiting for opponent to join…' : 'Ready to play?';
+  document.getElementById('lobby-status').textContent = isRematch
+    ? 'Both players in — ready up!'
+    : isP1 ? 'Waiting for opponent to join…' : 'Ready to play?';
 
   const linkRow = document.getElementById('lobby-link-row');
-  if (isP1) {
+  if (isP1 && !isRematch) {
     linkRow.classList.remove('hidden');
     document.getElementById('lobby-link-text').textContent = linkUrl;
   } else {
     linkRow.classList.add('hidden');
   }
 
-  // Ready button: P2 can ready immediately; P1 must wait for P2 to join
-  document.getElementById('lobby-ready-btn').disabled = isP1;
+  // On rematch both players are already in, so enable Ready for everyone immediately
+  document.getElementById('lobby-ready-btn').disabled = isRematch ? false : isP1;
 
   showScreen('challenge-lobby');
-  listenToChallenge();
+  if (!isRematch) listenToChallenge();
 }
 
 function listenToChallenge() {
@@ -278,6 +281,18 @@ function listenToChallenge() {
 
     const p1 = data.player1 || {};
     const p2 = data.player2 || {};
+
+    // ── Rematch detected — both players reset to lobby ────
+    if ((data.generation || 0) > challengeGeneration) {
+      challengeGeneration = data.generation;
+      challengeStarted    = false;
+      currentRound        = 0;
+      roundScores         = [];
+      state               = 'idle';
+      seededTargets       = generateTargets(data.seed);
+      showChallengeLobby(true);
+      return;
+    }
 
     // ── Lobby UI updates ──────────────────────────────────
     if (state === 'idle') {
@@ -554,10 +569,15 @@ document.getElementById('home-btn-results').addEventListener('click', goHome);
 document.getElementById('challenge-results-home-btn').addEventListener('click', goHome);
 
 document.getElementById('rematch-btn').addEventListener('click', () => {
-  if (challengeRef) challengeRef.off();
-  challengeRef     = null;
-  challengeStarted = false;
-  createChallenge();
+  if (!challengeRef) return;
+  const newSeed = Math.floor(Math.random() * 2147483647);
+  // Resetting the challenge notifies both players' listeners via the generation increment
+  challengeRef.set({
+    seed:       newSeed,
+    generation: challengeGeneration + 1,
+    player1:    { joined: true, ready: false },
+    player2:    { joined: true, ready: false },
+  });
 });
 
 box.addEventListener('click', () => stopRound());
