@@ -208,7 +208,7 @@
       targetSection.style.display = 'flex';
       targetDisplay.textContent = fmt(targetTime);
 
-      const steps = ['3', '2', '1', 'GO'];
+      const steps = ['3', '2', '1'];
       let i = 0;
 
       countdown.textContent = steps[i];
@@ -217,11 +217,7 @@
         i++;
         if (i < steps.length) {
           countdown.textContent = steps[i];
-        }
-        if (i === steps.length - 1) {
-          // "GO" shown — start timing on next tick clear
-        }
-        if (i >= steps.length) {
+        } else {
           clearInterval(countdownTimer);
           countdown.textContent = '';
           activateRed();
