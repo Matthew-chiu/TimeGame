@@ -16,7 +16,13 @@ const counterRef  = db.ref('globalSeconds');
 
 counterRef.on('value', (snapshot) => {
   const total = snapshot.val() || 0;
-  document.getElementById('global-value').textContent = total.toFixed(2) + 's';
+  let display;
+  if (total >= 1000) {
+    display = (total / 1000).toFixed(2) + 'k';
+  } else {
+    display = total.toFixed(2) + 's';
+  }
+  document.getElementById('global-value').textContent = display;
 });
 
 function addToGlobalCounter(seconds) {
