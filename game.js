@@ -26,9 +26,10 @@ function addToGlobalCounter(seconds) {
 
 // ─── Constants ────────────────────────────────────────────
 
-const MIN_TIME       = 1;
-const MAX_TIME       = 25;
-const HOWTO_SEEN_KEY = 'timeit_howto_seen';
+const MIN_TIME          = 1;
+const MAX_TIME          = 25;
+const HOWTO_SEEN_KEY    = 'timeit_howto_seen';
+const COUNTDOWN_SECONDS = 3;
 
 // ─── Game state ───────────────────────────────────────────
 //
@@ -131,7 +132,7 @@ function stopGame() {
   resultDiff.className       = cls;
   resultBlock.classList.add('show');
 
-  addToGlobalCounter(elapsed);
+  addToGlobalCounter(COUNTDOWN_SECONDS + elapsed);
 
   playBtn.textContent   = 'Play Again';
   playBtn.style.display = 'block';
