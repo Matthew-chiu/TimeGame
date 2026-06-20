@@ -18,7 +18,7 @@ body {
   font-family: 'Space Grotesk', sans-serif;
   user-select: none;
   -webkit-user-select: none;
-  padding: 16px;
+  padding: 24px 20px;
 }
 
 /* ─── Screen management ──────────────────────────────────── */
@@ -28,7 +28,7 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: 28px;
   width: 100%;
 }
 
@@ -43,16 +43,22 @@ body {
   top: 16px;
   right: 20px;
   font-size: 12px;
-  letter-spacing: 0.06em;
-  color: #555;
+  letter-spacing: 0.04em;
+  color: #888;
 }
 
 /* ─── Home screen ────────────────────────────────────────── */
 
-#home-subtitle {
-  font-size: 14px;
-  color: #555;
+h1 {
+  font-size: clamp(26px, 6vw, 36px);
+  font-weight: 700;
   letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#home-subtitle {
+  font-size: clamp(14px, 3vw, 16px);
+  color: #666;
   text-align: center;
 }
 
@@ -64,46 +70,36 @@ body {
 }
 
 #mode-descriptions {
-  font-size: 13px;
-  color: #555;
-  line-height: 1.8;
+  font-size: clamp(13px, 2.5vw, 15px);
+  color: #666;
+  line-height: 1.9;
   text-align: center;
-}
-
-/* ─── Shared heading ─────────────────────────────────────── */
-
-h1 {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 /* ─── Challenge lobby ────────────────────────────────────── */
 
 #challenge-lobby-box {
   border: 2px solid #000;
-  width: min(480px, 100%);
-  padding: 40px 24px;
+  width: min(560px, 100%);
+  padding: clamp(32px, 6vw, 56px) clamp(24px, 5vw, 48px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
   text-align: center;
 }
 
 #challenge-lobby-box h2 {
-  font-size: 18px;
+  font-size: clamp(18px, 4vw, 22px);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 #lobby-status {
-  font-size: 14px;
+  font-size: clamp(14px, 3vw, 15px);
   color: #555;
-  letter-spacing: 0.04em;
-  min-height: 20px;
+  min-height: 22px;
 }
 
 #lobby-link-row {
@@ -112,35 +108,36 @@ h1 {
   gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
-  border: 1px solid #ccc;
-  padding: 10px 16px;
+  border: 1px solid #ddd;
+  padding: 12px 16px;
   width: 100%;
+  background: #fafafa;
 }
 
 #lobby-link-text {
   font-size: 12px;
-  color: #333;
+  color: #444;
   word-break: break-all;
 }
 
 #lobby-copy-confirm {
   font-size: 13px;
   color: #28a745;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
 
 /* ─── Game box ───────────────────────────────────────────── */
 
 #game-box {
   border: 2px solid #000;
-  width: min(480px, 100%);
-  min-height: min(400px, 70vh);
+  width: min(580px, 100%);
+  min-height: min(480px, 72vh);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 24px;
-  gap: 20px;
+  padding: clamp(32px, 6vw, 60px) clamp(24px, 5vw, 52px);
+  gap: 24px;
   transition: background 0.1s;
   cursor: default;
   touch-action: manipulation;
@@ -154,11 +151,11 @@ h1 {
 /* ─── Round indicator ────────────────────────────────────── */
 
 #round-indicator {
-  font-size: 13px;
-  letter-spacing: 0.1em;
+  font-size: clamp(13px, 2.5vw, 14px);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #555;
-  min-height: 18px;
+  color: #777;
+  min-height: 20px;
 }
 
 /* ─── Target time display ────────────────────────────────── */
@@ -167,28 +164,28 @@ h1 {
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 
 #target-label {
-  font-size: 13px;
+  font-size: clamp(12px, 2.5vw, 14px);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #555;
+  color: #777;
 }
 
 #target-display {
-  font-size: clamp(32px, 10vw, 48px);
+  font-size: clamp(40px, 12vw, 64px);
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
 }
 
 /* ─── Countdown ──────────────────────────────────────────── */
 
 #countdown {
-  font-size: clamp(64px, 20vw, 96px);
+  font-size: clamp(72px, 22vw, 120px);
   font-weight: 700;
-  min-height: clamp(80px, 15vw, 120px);
+  min-height: clamp(90px, 18vw, 150px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -197,12 +194,11 @@ h1 {
 /* ─── Status message ─────────────────────────────────────── */
 
 #message {
-  font-size: 14px;
-  letter-spacing: 0.06em;
+  font-size: clamp(14px, 2.5vw, 16px);
   text-align: center;
-  color: #333;
+  color: #444;
   line-height: 1.7;
-  min-height: 20px;
+  min-height: 22px;
 }
 
 /* ─── Round result ───────────────────────────────────────── */
@@ -211,7 +207,7 @@ h1 {
   display: none;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   text-align: center;
 }
 
@@ -220,19 +216,19 @@ h1 {
 }
 
 #result-title {
-  font-size: 13px;
+  font-size: clamp(12px, 2.5vw, 14px);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #555;
+  color: #777;
 }
 
 #result-your-time {
-  font-size: clamp(28px, 9vw, 40px);
+  font-size: clamp(36px, 11vw, 56px);
   font-weight: 700;
 }
 
 #result-diff {
-  font-size: 16px;
+  font-size: clamp(15px, 3vw, 18px);
   font-weight: 600;
 }
 
@@ -256,26 +252,26 @@ h1 {
 /* ─── Shared button style ────────────────────────────────── */
 
 button {
-  padding: 14px 32px;
+  padding: 16px 36px;
   background: #000;
   color: #fff;
   border: none;
   font-family: 'Courier New', monospace; /* intentionally monospace — distinct from body text */
-  font-size: 14px;
+  font-size: clamp(13px, 2.5vw, 14px);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
-  min-width: 120px;
+  min-width: 130px;
 }
 
 button:hover {
-  background: #333;
+  background: #222;
 }
 
 button:disabled {
-  background: #999;
+  background: #aaa;
   cursor: not-allowed;
 }
 
@@ -293,10 +289,10 @@ button.secondary:hover {
 
 #click-hint {
   display: none;
-  font-size: 13px;
-  letter-spacing: 0.06em;
+  font-size: clamp(13px, 2.5vw, 15px);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  opacity: 0.6;
+  opacity: 0.55;
   text-align: center;
 }
 
@@ -305,54 +301,54 @@ button.secondary:hover {
 #waiting-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.93);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 50;
-  font-size: 14px;
+  font-size: 15px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #333;
+  color: #444;
 }
 
 /* ─── Daily results ──────────────────────────────────────── */
 
 #results-box {
   border: 2px solid #000;
-  width: min(520px, 100%);
-  padding: 32px 24px;
+  width: min(580px, 100%);
+  padding: clamp(28px, 5vw, 48px) clamp(20px, 4vw, 40px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
 }
 
 #results-box h2 {
-  font-size: 18px;
+  font-size: clamp(18px, 4vw, 22px);
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 #rounds-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: clamp(12px, 3.5vw, 14px);
+  font-size: clamp(13px, 3vw, 15px);
 }
 
 #rounds-table th,
 #rounds-table td {
-  padding: 8px 6px;
+  padding: 10px 8px;
   text-align: center;
-  border-bottom: 1px solid #e0e0e0;
-  letter-spacing: 0.03em;
+  border-bottom: 1px solid #eee;
 }
 
 #rounds-table th {
-  font-size: clamp(10px, 3vw, 12px);
+  font-size: clamp(11px, 2.5vw, 13px);
   text-transform: uppercase;
-  color: #555;
+  color: #888;
+  padding-bottom: 12px;
 }
 
 #total-score-block {
@@ -361,17 +357,18 @@ button.secondary:hover {
   align-items: center;
   width: 100%;
   border-top: 2px solid #000;
-  padding-top: 16px;
+  padding-top: 20px;
 }
 
 #total-label {
-  font-size: 14px;
-  letter-spacing: 0.1em;
+  font-size: clamp(13px, 2.5vw, 15px);
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  color: #444;
 }
 
 #total-value {
-  font-size: clamp(20px, 6vw, 28px);
+  font-size: clamp(24px, 6vw, 32px);
   font-weight: 700;
 }
 
@@ -379,18 +376,18 @@ button.secondary:hover {
 
 #challenge-results-box {
   border: 2px solid #000;
-  width: min(540px, 100%);
-  padding: 32px 24px;
+  width: min(600px, 100%);
+  padding: clamp(28px, 5vw, 48px) clamp(20px, 4vw, 40px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 28px;
 }
 
 #challenge-winner-text {
-  font-size: 20px;
+  font-size: clamp(22px, 5vw, 28px);
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: center;
 }
@@ -398,43 +395,45 @@ button.secondary:hover {
 #challenge-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: clamp(11px, 3vw, 13px);
+  font-size: clamp(12px, 2.8vw, 14px);
 }
 
 #challenge-table th,
 #challenge-table td {
-  padding: 8px 6px;
+  padding: 10px 8px;
   text-align: center;
-  border-bottom: 1px solid #e0e0e0;
-  letter-spacing: 0.03em;
+  border-bottom: 1px solid #eee;
 }
 
 #challenge-table th {
-  font-size: clamp(10px, 2.5vw, 12px);
+  font-size: clamp(11px, 2.5vw, 13px);
   text-transform: uppercase;
-  color: #555;
+  color: #888;
+  padding-bottom: 12px;
 }
 
 #challenge-totals-block {
   width: 100%;
   border-top: 2px solid #000;
-  padding-top: 16px;
+  padding-top: 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
 }
 
 .total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
-  letter-spacing: 0.06em;
+  font-size: clamp(13px, 2.5vw, 15px);
+  color: #444;
+  letter-spacing: 0.04em;
 }
 
 .total-row span:last-child {
-  font-size: clamp(18px, 5vw, 24px);
+  font-size: clamp(22px, 5vw, 28px);
   font-weight: 700;
+  color: #000;
 }
 
 #challenge-result-buttons {
