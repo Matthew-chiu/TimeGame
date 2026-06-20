@@ -21,6 +21,65 @@ body {
   padding: 16px;
 }
 
+/* ─── Screen management ──────────────────────────────────── */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ─── Global counter ─────────────────────────────────────── */
+
+#global-counter {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #555;
+  text-transform: uppercase;
+}
+
+/* ─── Home screen ────────────────────────────────────────── */
+
+#home-subtitle {
+  font-size: 14px;
+  color: #555;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+
+#mode-buttons {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#mode-descriptions {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.8;
+  text-align: center;
+}
+
+/* ─── Shared heading ─────────────────────────────────────── */
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* ─── Game box ───────────────────────────────────────────── */
 
 #game-box {
@@ -38,19 +97,20 @@ body {
   touch-action: manipulation;
 }
 
-/* Red background is added by JS when the player should tap */
+/* Red background added by JS when the player should tap */
 #game-box.active {
   background: #ff3b30;
   cursor: pointer;
 }
 
-/* ─── Title ──────────────────────────────────────────────── */
+/* ─── Round indicator (Daily only) ──────────────────────── */
 
-h1 {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+#round-indicator {
+  font-size: 13px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: #555;
+  min-height: 18px;
 }
 
 /* ─── Target time display ────────────────────────────────── */
@@ -97,7 +157,7 @@ h1 {
   min-height: 20px;
 }
 
-/* ─── Result ─────────────────────────────────────────────── */
+/* ─── Round result ───────────────────────────────────────── */
 
 #result-block {
   display: none; /* shown by JS after the player taps */
@@ -132,7 +192,20 @@ h1 {
 #result-diff.ok   { color: #fd7e14; }
 #result-diff.bad  { color: #dc3545; }
 
-/* ─── Button ─────────────────────────────────────────────── */
+/* ─── In-game buttons ────────────────────────────────────── */
+
+#game-buttons {
+  display: none; /* shown by JS after a round ends */
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+#game-buttons.show {
+  display: flex;
+}
+
+/* ─── Shared button style ────────────────────────────────── */
 
 button {
   padding: 14px 32px;
@@ -161,60 +234,64 @@ button:hover {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.6;
+  text-align: center;
 }
 
-/* ─── Global counter ─────────────────────────────────────── */
+/* ─── Daily results screen ───────────────────────────────── */
 
-#global-counter {
-  position: fixed;
-  top: 16px;
-  right: 20px;
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: #555;
-  text-transform: uppercase;
-}
-
-/* ─── How to play modal ──────────────────────────────────── */
-
-#howto-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.55);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 16px;
-}
-
-#howto-overlay.hidden {
-  display: none !important;
-}
-
-#howto-box {
-  background: #fff;
+#results-box {
   border: 2px solid #000;
-  width: min(460px, 100%);
-  padding: 36px 32px;
+  width: min(520px, 100%);
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  align-items: center;
+  gap: 24px;
 }
 
-#howto-box h2 {
+#results-box h2 {
   font-size: 18px;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
-#howto-steps {
-  padding-left: 20px;
+#rounds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(12px, 3.5vw, 14px);
+}
+
+#rounds-table th,
+#rounds-table td {
+  padding: 8px 6px;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+  letter-spacing: 0.03em;
+}
+
+#rounds-table th {
+  font-size: clamp(10px, 3vw, 12px);
+  text-transform: uppercase;
+  color: #555;
+}
+
+#total-score-block {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border-top: 2px solid #000;
+  padding-top: 16px;
+}
+
+#total-label {
   font-size: 14px;
-  line-height: 1.6;
-  color: #222;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#total-value {
+  font-size: clamp(20px, 6vw, 28px);
+  font-weight: 700;
 }

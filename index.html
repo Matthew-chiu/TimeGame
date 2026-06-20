@@ -8,53 +8,90 @@
 </head>
 <body>
 
-  <!-- ── Global counter ────────────────────────────────────── -->
+  <!-- ── Global counter ─────────────────────────────────── -->
   <div id="global-counter">
     Global Seconds Spent: <span id="global-value">—</span>
   </div>
 
-  <!-- ── Game ───────────────────────────────────────────── -->
-  <div id="game-box">
+  <!-- ── Home screen ────────────────────────────────────── -->
+  <div id="home-screen" class="screen">
 
     <h1>Time It</h1>
+    <p id="home-subtitle">How well do you know a second?</p>
 
-    <div id="target-section">
-      <div id="target-label">Target time</div>
-      <div id="target-display">—</div>
+    <div id="mode-buttons">
+      <button id="daily-btn">Daily</button>
+      <button id="practice-btn">Practice</button>
     </div>
 
-    <div id="countdown"></div>
-
-    <div id="message">Press Start to begin.</div>
-
-    <div id="result-block">
-      <div id="result-title">Your time</div>
-      <div id="result-your-time"></div>
-      <div id="result-diff"></div>
-    </div>
-
-    <button id="play-btn">Start</button>
-
-    <div id="click-hint">Tap to stop</div>
+    <p id="mode-descriptions">
+      <span><strong>Daily</strong> — 5 rounds, lowest total score wins.</span><br>
+      <span><strong>Practice</strong> — one round at a time.</span>
+    </p>
 
   </div>
 
-  <!-- ── How to play modal ───────────────────────────────── -->
-  <div id="howto-overlay">
-    <div id="howto-box">
+  <!-- ── Game screen ────────────────────────────────────── -->
+  <div id="game-screen" class="screen hidden">
 
-      <h2>How to Play</h2>
+    <div id="game-box">
 
-      <ol id="howto-steps">
-        <li>A <strong>target time</strong> is shown — anywhere from 1 to 25 seconds.</li>
-        <li>A <strong>3-2-1 countdown</strong> begins, then the screen turns <strong>red</strong>.</li>
-        <li><strong>Tap the screen</strong> when you think that exact amount of time has passed.</li>
-        <li>Your score is <strong>how far off you were</strong>. Lower is better.</li>
-      </ol>
+      <div id="round-indicator"></div>
 
-      <button id="howto-close">Got it</button>
+      <div id="target-section">
+        <div id="target-label">Target time</div>
+        <div id="target-display">—</div>
+      </div>
+
+      <div id="countdown"></div>
+
+      <div id="message"></div>
+
+      <div id="result-block">
+        <div id="result-title">Your time</div>
+        <div id="result-your-time"></div>
+        <div id="result-diff"></div>
+      </div>
+
+      <div id="game-buttons">
+        <button id="next-btn"></button>
+        <button id="home-btn-game">Home</button>
+      </div>
+
+      <div id="click-hint">Tap to stop</div>
 
     </div>
+
+  </div>
+
+  <!-- ── Daily results screen ───────────────────────────── -->
+  <div id="results-screen" class="screen hidden">
+
+    <div id="results-box">
+
+      <h2>Daily Results</h2>
+
+      <table id="rounds-table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Target</th>
+            <th>Your time</th>
+            <th>Off by</th>
+          </tr>
+        </thead>
+        <tbody id="rounds-body"></tbody>
+      </table>
+
+      <div id="total-score-block">
+        <span id="total-label">Total score</span>
+        <span id="total-value"></span>
+      </div>
+
+      <button id="home-btn-results">Home</button>
+
+    </div>
+
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
