@@ -163,6 +163,18 @@ button:hover {
   opacity: 0.6;
 }
 
+/* ─── Global counter ─────────────────────────────────────── */
+
+#global-counter {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: #555;
+  text-transform: uppercase;
+}
+
 /* ─── How to play modal ──────────────────────────────────── */
 
 #howto-overlay {

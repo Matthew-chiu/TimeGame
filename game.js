@@ -1,3 +1,29 @@
+// ─── Firebase ─────────────────────────────────────────────
+
+const firebaseConfig = {
+  apiKey:            'AIzaSyBUt4H04iNgr4zPg49e-A2KDWzNhSGafkw',
+  authDomain:        'timegame-bb838.firebaseapp.com',
+  databaseURL:       'https://timegame-bb838-default-rtdb.firebaseio.com',
+  projectId:         'timegame-bb838',
+  storageBucket:     'timegame-bb838.firebasestorage.app',
+  messagingSenderId: '102710484907',
+  appId:             '1:102710484907:web:1cdcb304aaea9d1ed7bcee',
+};
+
+const firebaseApp  = firebase.initializeApp(firebaseConfig);
+const db           = firebase.database();
+const counterRef   = db.ref('globalSeconds');
+
+// Listen in real-time so the counter updates live for every visitor
+counterRef.on('value', (snapshot) => {
+  const total = snapshot.val() || 0;
+  document.getElementById('global-value').textContent = total.toFixed(2) + 's';
+});
+
+function addToGlobalCounter(seconds) {
+  counterRef.set(firebase.database.ServerValue.increment(seconds));
+}
+
 // ─── Constants ────────────────────────────────────────────
 
 const MIN_TIME       = 1;
@@ -104,6 +130,8 @@ function stopGame() {
   resultDiff.textContent     = `${sign}${formatSeconds(diff)} — ${label}`;
   resultDiff.className       = cls;
   resultBlock.classList.add('show');
+
+  addToGlobalCounter(elapsed);
 
   playBtn.textContent   = 'Play Again';
   playBtn.style.display = 'block';
