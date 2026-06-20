@@ -580,7 +580,7 @@ document.getElementById('share-results-btn').addEventListener('click', () => {
     return '🔴';
   }).join('');
   const date = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', timeZone: 'America/Los_Angeles' });
-  const text = `Tap The Time (${date})\n${emojis}\nOff by ${formatSeconds(total)} total\nCan you beat me?! - tapthetime.com`;
+  const text = `Tap The Time (${date}) -\n${emojis}\nOff by ${formatSeconds(total)} total\nCan you beat me?! - tapthetime.com`;
 
   if (navigator.share) {
     navigator.share({ text });
