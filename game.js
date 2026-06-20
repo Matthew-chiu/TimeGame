@@ -564,7 +564,7 @@ document.getElementById('lobby-copy-btn').addEventListener('click', () => {
 
 document.getElementById('lobby-share-btn').addEventListener('click', () => {
   const link = document.getElementById('lobby-link-text').textContent;
-  navigator.share({ title: 'Tap The Time', text: 'Can you beat my score?', url: link });
+  navigator.share({ title: 'Tap The Time', text: '1v1 me on Tap The Time — same rounds, live results 🕐', url: link });
 });
 
 nextBtn.addEventListener('click', (e) => e.stopPropagation());
