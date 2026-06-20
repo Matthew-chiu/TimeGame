@@ -255,7 +255,7 @@ button {
   padding: 16px 36px;
   background: #000;
   color: #fff;
-  border: none;
+  border: 2px solid transparent;
   font-family: 'Courier New', monospace; /* intentionally monospace — distinct from body text */
   font-size: clamp(13px, 2.5vw, 14px);
   letter-spacing: 0.1em;
