@@ -80,6 +80,56 @@ h1 {
   text-transform: uppercase;
 }
 
+/* ─── Challenge lobby ────────────────────────────────────── */
+
+#challenge-lobby-box {
+  border: 2px solid #000;
+  width: min(480px, 100%);
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+#challenge-lobby-box h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#lobby-status {
+  font-size: 14px;
+  color: #555;
+  letter-spacing: 0.04em;
+  min-height: 20px;
+}
+
+#lobby-link-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  border: 1px solid #ccc;
+  padding: 10px 16px;
+  width: 100%;
+}
+
+#lobby-link-text {
+  font-size: 12px;
+  color: #333;
+  word-break: break-all;
+}
+
+#lobby-copy-confirm {
+  font-size: 13px;
+  color: #28a745;
+  letter-spacing: 0.06em;
+}
+
 /* ─── Game box ───────────────────────────────────────────── */
 
 #game-box {
@@ -97,13 +147,12 @@ h1 {
   touch-action: manipulation;
 }
 
-/* Red background added by JS when the player should tap */
 #game-box.active {
   background: #ff3b30;
   cursor: pointer;
 }
 
-/* ─── Round indicator (Daily only) ──────────────────────── */
+/* ─── Round indicator ────────────────────────────────────── */
 
 #round-indicator {
   font-size: 13px;
@@ -116,7 +165,7 @@ h1 {
 /* ─── Target time display ────────────────────────────────── */
 
 #target-section {
-  display: none; /* shown by JS once a round starts */
+  display: none;
   flex-direction: column;
   align-items: center;
   gap: 6px;
@@ -135,7 +184,7 @@ h1 {
   letter-spacing: 0.05em;
 }
 
-/* ─── Countdown number ───────────────────────────────────── */
+/* ─── Countdown ──────────────────────────────────────────── */
 
 #countdown {
   font-size: clamp(64px, 20vw, 96px);
@@ -160,7 +209,7 @@ h1 {
 /* ─── Round result ───────────────────────────────────────── */
 
 #result-block {
-  display: none; /* shown by JS after the player taps */
+  display: none;
   flex-direction: column;
   align-items: center;
   gap: 8px;
@@ -195,7 +244,7 @@ h1 {
 /* ─── In-game buttons ────────────────────────────────────── */
 
 #game-buttons {
-  display: none; /* shown by JS after a round ends */
+  display: none;
   gap: 12px;
   flex-wrap: wrap;
   justify-content: center;
@@ -226,10 +275,25 @@ button:hover {
   background: #333;
 }
 
-/* ─── Tap hint (shown during active phase) ───────────────── */
+button:disabled {
+  background: #999;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+}
+
+button.secondary:hover {
+  background: #f5f5f5;
+}
+
+/* ─── Tap hint ───────────────────────────────────────────── */
 
 #click-hint {
-  display: none; /* shown by JS when the box turns red */
+  display: none;
   font-size: 13px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -237,7 +301,23 @@ button:hover {
   text-align: center;
 }
 
-/* ─── Daily results screen ───────────────────────────────── */
+/* ─── Waiting overlay ────────────────────────────────────── */
+
+#waiting-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #333;
+}
+
+/* ─── Daily results ──────────────────────────────────────── */
 
 #results-box {
   border: 2px solid #000;
@@ -294,4 +374,73 @@ button:hover {
 #total-value {
   font-size: clamp(20px, 6vw, 28px);
   font-weight: 700;
+}
+
+/* ─── Challenge results ──────────────────────────────────── */
+
+#challenge-results-box {
+  border: 2px solid #000;
+  width: min(540px, 100%);
+  padding: 32px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+#challenge-winner-text {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+#challenge-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: clamp(11px, 3vw, 13px);
+}
+
+#challenge-table th,
+#challenge-table td {
+  padding: 8px 6px;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+  letter-spacing: 0.03em;
+}
+
+#challenge-table th {
+  font-size: clamp(10px, 2.5vw, 12px);
+  text-transform: uppercase;
+  color: #555;
+}
+
+#challenge-totals-block {
+  width: 100%;
+  border-top: 2px solid #000;
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+}
+
+.total-row span:last-child {
+  font-size: clamp(18px, 5vw, 24px);
+  font-weight: 700;
+}
+
+#challenge-result-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }

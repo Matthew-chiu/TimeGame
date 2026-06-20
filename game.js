@@ -14,7 +14,6 @@ const firebaseApp = firebase.initializeApp(firebaseConfig);
 const db          = firebase.database();
 const counterRef  = db.ref('globalSeconds');
 
-// Listen in real-time so the counter updates live for every visitor
 counterRef.on('value', (snapshot) => {
   const total = snapshot.val() || 0;
   document.getElementById('global-value').textContent = total.toFixed(2) + 's';
@@ -30,31 +29,41 @@ const DAILY_ROUNDS      = 5;
 const MIN_TIME          = 1;
 const MAX_TIME          = 25;
 const COUNTDOWN_SECONDS = 3;
-const STORAGE_KEY       = 'timeit_daily';    // localStorage key for daily save data
+const STORAGE_KEY       = 'timeit_daily';
 
 // ─── Mode & round state ───────────────────────────────────
 
-let mode             = null;  // 'daily' | 'practice'
+let mode             = null;  // 'daily' | 'practice' | 'challenge'
 let currentRound     = 0;
-let roundScores      = [];    // { target, elapsed, diff } per round (daily only)
-let dailyTargetTimes = [];    // pre-generated seeded times for today's daily
+let roundScores      = [];
+let seededTargets    = [];    // used for both daily and challenge modes
 
 // ─── Per-round state ──────────────────────────────────────
 //
-// States flow: idle → countdown → active → result
-// (then loops back to idle for the next round)
+// States: idle → countdown → active → result → idle
+// Challenge adds: awaiting-opponent (after finishing all rounds)
 
 let state          = 'idle';
 let targetTime     = 0;
 let startTime      = 0;
 let countdownTimer = null;
 
+// ─── Challenge state ──────────────────────────────────────
+
+let challengeId      = null;  // Firebase key for this challenge
+let challengeRef     = null;  // Firebase ref for this challenge
+let myPlayerKey      = null;  // 'player1' or 'player2'
+let opponentKey      = null;  // 'player2' or 'player1'
+let challengeStarted = false; // prevents double-starting when both ready
+
 // ─── DOM references ───────────────────────────────────────
 
 const screens = {
-  home:    document.getElementById('home-screen'),
-  game:    document.getElementById('game-screen'),
-  results: document.getElementById('results-screen'),
+  home:               document.getElementById('home-screen'),
+  game:               document.getElementById('game-screen'),
+  results:            document.getElementById('results-screen'),
+  'challenge-lobby':  document.getElementById('challenge-lobby-screen'),
+  'challenge-results':document.getElementById('challenge-results-screen'),
 };
 
 const box            = document.getElementById('game-box');
@@ -70,10 +79,10 @@ const gameButtons    = document.getElementById('game-buttons');
 const nextBtn        = document.getElementById('next-btn');
 const homeBtnGame    = document.getElementById('home-btn-game');
 const clickHint      = document.getElementById('click-hint');
+const waitingOverlay = document.getElementById('waiting-overlay');
 
 const roundsBody     = document.getElementById('rounds-body');
 const totalValue     = document.getElementById('total-value');
-const homeBtnResults = document.getElementById('home-btn-results');
 
 // ─── Screen navigation ────────────────────────────────────
 
@@ -81,6 +90,23 @@ function showScreen(name) {
   Object.entries(screens).forEach(([key, el]) => {
     el.classList.toggle('hidden', key !== name);
   });
+  waitingOverlay.classList.add('hidden');
+}
+
+function goHome() {
+  if (challengeRef) {
+    challengeRef.off(); // remove all Firebase listeners for this challenge
+    challengeRef = null;
+  }
+  challengeId      = null;
+  myPlayerKey      = null;
+  opponentKey      = null;
+  challengeStarted = false;
+  mode             = null;
+  state            = 'idle';
+  // Clear challenge ID from URL without reloading
+  window.history.replaceState({}, '', window.location.pathname);
+  showScreen('home');
 }
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -102,9 +128,6 @@ function grade(diff) {
 }
 
 // ─── Seeded random number generator ──────────────────────
-//
-// Ensures every player gets the same daily target times.
-// Seeded with today's date as an integer (e.g. 20260620).
 
 function mulberry32(seed) {
   return function () {
@@ -116,12 +139,7 @@ function mulberry32(seed) {
   };
 }
 
-function todayString() {
-  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
-}
-
-function generateDailyTargets() {
-  const seed = parseInt(todayString().replace(/-/g, ''), 10);
+function generateTargets(seed) {
   const rand = mulberry32(seed);
   return Array.from({ length: DAILY_ROUNDS }, () => {
     const raw = rand() * (MAX_TIME - MIN_TIME) + MIN_TIME;
@@ -129,21 +147,19 @@ function generateDailyTargets() {
   });
 }
 
+function todayString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 // ─── Daily save data (localStorage) ──────────────────────
 
 function getDailySave() {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
-  } catch {
-    return {};
-  }
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch { return {}; }
 }
 
 function saveDailyResult(scores) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({
-    date:   todayString(),
-    scores: scores,
-  }));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ date: todayString(), scores }));
 }
 
 function hasPlayedTodaysDaily() {
@@ -158,11 +174,10 @@ function startDaily() {
     showDailyResults(true);
     return;
   }
-
-  mode             = 'daily';
-  currentRound     = 0;
-  roundScores      = [];
-  dailyTargetTimes = generateDailyTargets();
+  mode          = 'daily';
+  currentRound  = 0;
+  roundScores   = [];
+  seededTargets = generateTargets(parseInt(todayString().replace(/-/g, ''), 10));
   showScreen('game');
   startRound();
 }
@@ -174,19 +189,158 @@ function startPractice() {
   startRound();
 }
 
+// ─── Challenge — create (Player 1) ───────────────────────
+
+function generateChallengeId() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+function createChallenge() {
+  challengeId      = generateChallengeId();
+  myPlayerKey      = 'player1';
+  opponentKey      = 'player2';
+  challengeStarted = false;
+  const seed       = Math.floor(Math.random() * 2147483647);
+  seededTargets    = generateTargets(seed);
+
+  challengeRef = db.ref(`challenges/${challengeId}`);
+  challengeRef.set({
+    seed,
+    player1: { joined: true,  ready: false },
+    player2: { joined: false, ready: false },
+  });
+
+  showChallengeLobby();
+}
+
+// ─── Challenge — join (Player 2) ─────────────────────────
+
+function joinChallenge(id) {
+  challengeId  = id;
+  myPlayerKey  = 'player2';
+  opponentKey  = 'player1';
+  challengeRef = db.ref(`challenges/${id}`);
+
+  challengeRef.once('value', (snap) => {
+    const data = snap.val();
+    if (!data) { goHome(); return; }
+
+    seededTargets = generateTargets(data.seed);
+
+    // Mark player 2 as joined so P1's lobby updates
+    challengeRef.child('player2/joined').set(true);
+
+    showChallengeLobby();
+  });
+}
+
+// ─── Challenge lobby ──────────────────────────────────────
+
+function showChallengeLobby() {
+  const isP1    = myPlayerKey === 'player1';
+  const linkUrl = `${window.location.origin}${window.location.pathname}?c=${challengeId}`;
+
+  document.getElementById('lobby-title').textContent =
+    isP1 ? 'Challenge Created' : "You've been challenged!";
+
+  document.getElementById('lobby-status').textContent =
+    isP1 ? 'Waiting for opponent to join…' : 'Ready to play?';
+
+  const linkRow = document.getElementById('lobby-link-row');
+  if (isP1) {
+    linkRow.classList.remove('hidden');
+    document.getElementById('lobby-link-text').textContent = linkUrl;
+  } else {
+    linkRow.classList.add('hidden');
+  }
+
+  // Ready button: P2 can ready immediately; P1 must wait for P2 to join
+  document.getElementById('lobby-ready-btn').disabled = isP1;
+
+  showScreen('challenge-lobby');
+  listenToChallenge();
+}
+
+function listenToChallenge() {
+  if (!challengeRef) return;
+
+  challengeRef.on('value', (snap) => {
+    const data = snap.val();
+    if (!data) return;
+
+    const p1 = data.player1 || {};
+    const p2 = data.player2 || {};
+
+    // ── Lobby UI updates ──────────────────────────────────
+    if (state === 'idle') {
+      const opponentJoined = myPlayerKey === 'player1' ? p2.joined : p1.joined;
+      const myReady        = data[myPlayerKey]?.ready;
+      const oppReady       = data[opponentKey]?.ready;
+
+      // Enable P1's Ready button once P2 has joined
+      if (myPlayerKey === 'player1') {
+        document.getElementById('lobby-ready-btn').disabled = !opponentJoined;
+      }
+
+      // Update status message
+      const statusEl = document.getElementById('lobby-status');
+      if (!opponentJoined) {
+        statusEl.textContent = 'Waiting for opponent to join…';
+      } else if (myReady && !oppReady) {
+        statusEl.textContent = 'Waiting for opponent to ready up…';
+      } else if (!myReady && oppReady) {
+        statusEl.textContent = 'Opponent is ready! Ready up!';
+      } else if (opponentJoined && !myReady) {
+        statusEl.textContent = 'Opponent joined! Ready up!';
+      }
+    }
+
+    // ── Start game when both are ready ────────────────────
+    if (p1.ready && p2.ready && !challengeStarted) {
+      challengeStarted = true;
+      startChallengeRounds();
+    }
+
+    // ── Show results when both players have finished ──────
+    if (state === 'awaiting-opponent') {
+      const myScores  = data[myPlayerKey]?.scores;
+      const oppScores = data[opponentKey]?.scores;
+      if (myScores?.length === DAILY_ROUNDS && oppScores?.length === DAILY_ROUNDS) {
+        showChallengeResults(data);
+      }
+    }
+  });
+}
+
+function markReady() {
+  if (!challengeRef || !myPlayerKey) return;
+  document.getElementById('lobby-ready-btn').disabled = true;
+  document.getElementById('lobby-status').textContent = 'Waiting for opponent to ready up…';
+  challengeRef.child(`${myPlayerKey}/ready`).set(true);
+}
+
+// ─── Challenge game ───────────────────────────────────────
+
+function startChallengeRounds() {
+  mode         = 'challenge';
+  currentRound = 0;
+  roundScores  = [];
+  showScreen('game');
+  startRound();
+}
+
 // ─── Round lifecycle ──────────────────────────────────────
 
 function startRound() {
   currentRound++;
 
-  // Daily uses pre-seeded targets so all players see the same times
-  targetTime = mode === 'daily'
-    ? dailyTargetTimes[currentRound - 1]
+  targetTime = (mode === 'daily' || mode === 'challenge')
+    ? seededTargets[currentRound - 1]
     : randomTime();
 
   state = 'countdown';
 
-  // Reset round UI
   gameButtons.classList.remove('show');
   resultBlock.classList.remove('show');
   box.classList.remove('active');
@@ -194,7 +348,7 @@ function startRound() {
   countdown.textContent   = '';
   message.textContent     = 'Get ready…';
 
-  roundIndicator.textContent = mode === 'daily'
+  roundIndicator.textContent = (mode === 'daily' || mode === 'challenge')
     ? `Round ${currentRound} of ${DAILY_ROUNDS}`
     : '';
 
@@ -217,7 +371,6 @@ function startRound() {
   }, 1000);
 }
 
-// Called immediately after the countdown — this is when timing begins
 function activateRed() {
   state     = 'active';
   startTime = performance.now();
@@ -226,7 +379,6 @@ function activateRed() {
   clickHint.style.display = 'block';
 }
 
-// Called when the player taps/clicks during the active phase
 function stopRound() {
   if (state !== 'active') return;
 
@@ -245,18 +397,16 @@ function stopRound() {
   resultDiff.className       = cls;
   resultBlock.classList.add('show');
 
+  // Both players contribute to the global counter
   addToGlobalCounter(COUNTDOWN_SECONDS + elapsed);
 
   if (mode === 'daily') {
     roundScores.push({ target: targetTime, elapsed, diff });
-
-    // Save immediately after the last round so the lock is set
-    // even if the user closes before clicking "See Results"
-    if (roundScores.length === DAILY_ROUNDS) {
-      saveDailyResult(roundScores);
-    }
-
+    if (roundScores.length === DAILY_ROUNDS) saveDailyResult(roundScores);
     handleDailyRoundEnd();
+  } else if (mode === 'challenge') {
+    roundScores.push({ target: targetTime, elapsed, diff });
+    handleChallengeRoundEnd();
   } else {
     handlePracticeRoundEnd();
   }
@@ -266,23 +416,42 @@ function stopRound() {
 
 function handleDailyRoundEnd() {
   const isLastRound = currentRound === DAILY_ROUNDS;
-
   nextBtn.textContent       = isLastRound ? 'See Results' : 'Next Round';
   homeBtnGame.style.display = 'none';
   gameButtons.classList.add('show');
-
   nextBtn.onclick = isLastRound ? () => showDailyResults() : startRound;
+}
+
+function handleChallengeRoundEnd() {
+  const isLastRound = currentRound === DAILY_ROUNDS;
+
+  if (!isLastRound) {
+    nextBtn.textContent       = 'Next Round';
+    homeBtnGame.style.display = 'none';
+    gameButtons.classList.add('show');
+    nextBtn.onclick = startRound;
+  } else {
+    // Save scores to Firebase then wait for opponent
+    const total = roundScores.reduce((sum, r) => sum + r.diff, 0);
+    challengeRef.child(myPlayerKey).update({
+      scores: roundScores,
+      total,
+    });
+
+    state = 'awaiting-opponent';
+    gameButtons.classList.remove('show');
+    waitingOverlay.classList.remove('hidden');
+  }
 }
 
 function handlePracticeRoundEnd() {
   nextBtn.textContent       = 'Play Again';
   homeBtnGame.style.display = 'block';
   gameButtons.classList.add('show');
-
   nextBtn.onclick = startRound;
 }
 
-// ─── Daily results screen ─────────────────────────────────
+// ─── Daily results ────────────────────────────────────────
 
 function showDailyResults(alreadyPlayed = false) {
   roundsBody.innerHTML = '';
@@ -302,24 +471,96 @@ function showDailyResults(alreadyPlayed = false) {
   });
 
   totalValue.textContent = formatSeconds(total);
-
-  document.getElementById('results-box').querySelector('h2').textContent =
+  document.getElementById('results-title').textContent =
     alreadyPlayed ? "Today's Results" : 'Daily Results';
 
   showScreen('results');
+}
+
+// ─── Challenge results ────────────────────────────────────
+
+function showChallengeResults(data) {
+  waitingOverlay.classList.add('hidden');
+
+  const myData  = data[myPlayerKey];
+  const oppData = data[opponentKey];
+  const myTotal  = myData.total;
+  const oppTotal = oppData.total;
+
+  const winnerText = myTotal < oppTotal
+    ? 'You Win!'
+    : myTotal > oppTotal
+    ? 'You Lose.'
+    : 'It\'s a Tie!';
+
+  document.getElementById('challenge-winner-text').textContent = winnerText;
+  document.getElementById('my-total-display').textContent  = formatSeconds(myTotal);
+  document.getElementById('opp-total-display').textContent = formatSeconds(oppTotal);
+
+  const tbody = document.getElementById('challenge-body');
+  tbody.innerHTML = '';
+
+  myData.scores.forEach((myRound, i) => {
+    const oppRound = oppData.scores[i];
+    const mySign   = myRound.elapsed  > myRound.target  ? '+' : '-';
+    const oppSign  = oppRound.elapsed > oppRound.target ? '+' : '-';
+
+    // Highlight the better score for each round
+    const myWon  = myRound.diff <= oppRound.diff;
+    const oppWon = oppRound.diff <= myRound.diff;
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${formatSeconds(myRound.target)}</td>
+      <td style="${myWon  ? 'font-weight:700' : 'color:#999'}">${mySign}${formatSeconds(myRound.diff)}</td>
+      <td style="${oppWon ? 'font-weight:700' : 'color:#999'}">${oppSign}${formatSeconds(oppRound.diff)}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  showScreen('challenge-results');
 }
 
 // ─── Event listeners ──────────────────────────────────────
 
 document.getElementById('daily-btn').addEventListener('click', startDaily);
 document.getElementById('practice-btn').addEventListener('click', startPractice);
+document.getElementById('challenge-btn').addEventListener('click', createChallenge);
 
-nextBtn.addEventListener('click', (e) => e.stopPropagation());
-homeBtnGame.addEventListener('click', (e) => {
-  e.stopPropagation();
-  showScreen('home');
+document.getElementById('lobby-ready-btn').addEventListener('click', markReady);
+document.getElementById('lobby-home-btn').addEventListener('click', goHome);
+
+document.getElementById('lobby-copy-btn').addEventListener('click', () => {
+  const link    = document.getElementById('lobby-link-text').textContent;
+  const confirm = document.getElementById('lobby-copy-confirm');
+  navigator.clipboard.writeText(link).then(() => {
+    confirm.classList.remove('hidden');
+    setTimeout(() => confirm.classList.add('hidden'), 2000);
+  });
 });
 
-homeBtnResults.addEventListener('click', () => showScreen('home'));
+nextBtn.addEventListener('click', (e) => e.stopPropagation());
+homeBtnGame.addEventListener('click', (e) => { e.stopPropagation(); goHome(); });
+
+document.getElementById('home-btn-results').addEventListener('click', goHome);
+document.getElementById('challenge-results-home-btn').addEventListener('click', goHome);
+
+document.getElementById('rematch-btn').addEventListener('click', () => {
+  if (challengeRef) challengeRef.off();
+  challengeRef     = null;
+  challengeStarted = false;
+  createChallenge();
+});
 
 box.addEventListener('click', () => stopRound());
+
+// ─── Init — check URL for challenge invite ─────────────────
+
+(function init() {
+  const params = new URLSearchParams(window.location.search);
+  const inviteId = params.get('c');
+  if (inviteId) {
+    joinChallenge(inviteId);
+  }
+})();

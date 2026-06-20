@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Time It</title>
+  <title>Tap The Time</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -16,24 +16,44 @@
   <!-- ── Home screen ────────────────────────────────────── -->
   <div id="home-screen" class="screen">
 
-    <h1>Time It</h1>
+    <h1>Tap The Time</h1>
     <p id="home-subtitle">How well do you know a second?</p>
 
     <div id="mode-buttons">
       <button id="daily-btn">Daily</button>
       <button id="practice-btn">Practice</button>
+      <button id="challenge-btn">Challenge</button>
     </div>
 
     <p id="mode-descriptions">
-      <span><strong>Daily</strong> — 5 rounds, lowest total score wins.</span><br>
-      <span><strong>Practice</strong> — one round at a time.</span>
+      <span><strong>Daily</strong> — 5 rounds, same targets for everyone. Once per day.</span><br>
+      <span><strong>Practice</strong> — One round at a time.</span><br>
+      <span><strong>Challenge</strong> — Play 5 rounds against a friend in real time.</span>
     </p>
 
   </div>
 
+  <!-- ── Challenge lobby ────────────────────────────────── -->
+  <div id="challenge-lobby-screen" class="screen hidden">
+    <div id="challenge-lobby-box">
+
+      <h2 id="lobby-title"></h2>
+      <p id="lobby-status"></p>
+
+      <div id="lobby-link-row" class="hidden">
+        <span id="lobby-link-text"></span>
+        <button id="lobby-copy-btn">Copy</button>
+      </div>
+      <p id="lobby-copy-confirm" class="hidden">Copied!</p>
+
+      <button id="lobby-ready-btn" disabled>Ready</button>
+      <button id="lobby-home-btn" class="secondary">Home</button>
+
+    </div>
+  </div>
+
   <!-- ── Game screen ────────────────────────────────────── -->
   <div id="game-screen" class="screen hidden">
-
     <div id="game-box">
 
       <div id="round-indicator"></div>
@@ -44,7 +64,6 @@
       </div>
 
       <div id="countdown"></div>
-
       <div id="message"></div>
 
       <div id="result-block">
@@ -61,15 +80,18 @@
       <div id="click-hint">Tap to stop</div>
 
     </div>
+  </div>
 
+  <!-- ── Waiting overlay (shown while opponent finishes) ── -->
+  <div id="waiting-overlay" class="hidden">
+    <p>Waiting for opponent to finish…</p>
   </div>
 
   <!-- ── Daily results screen ───────────────────────────── -->
   <div id="results-screen" class="screen hidden">
-
     <div id="results-box">
 
-      <h2>Daily Results</h2>
+      <h2 id="results-title">Daily Results</h2>
 
       <table id="rounds-table">
         <thead>
@@ -91,7 +113,43 @@
       <button id="home-btn-results">Home</button>
 
     </div>
+  </div>
 
+  <!-- ── Challenge results screen ───────────────────────── -->
+  <div id="challenge-results-screen" class="screen hidden">
+    <div id="challenge-results-box">
+
+      <h2 id="challenge-winner-text"></h2>
+
+      <table id="challenge-table">
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Target</th>
+            <th>You</th>
+            <th>Opponent</th>
+          </tr>
+        </thead>
+        <tbody id="challenge-body"></tbody>
+      </table>
+
+      <div id="challenge-totals-block">
+        <div class="total-row">
+          <span>Your total</span>
+          <span id="my-total-display"></span>
+        </div>
+        <div class="total-row">
+          <span>Opponent's total</span>
+          <span id="opp-total-display"></span>
+        </div>
+      </div>
+
+      <div id="challenge-result-buttons">
+        <button id="rematch-btn">Rematch</button>
+        <button id="challenge-results-home-btn" class="secondary">Home</button>
+      </div>
+
+    </div>
   </div>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
