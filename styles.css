@@ -442,3 +442,61 @@ button.secondary:hover {
   flex-wrap: wrap;
   justify-content: center;
 }
+
+/* ─── Desktop overrides (768px+) ─────────────────────────── */
+
+@media (min-width: 768px) {
+  h1 { font-size: 48px; }
+
+  #home-subtitle    { font-size: 18px; }
+  #mode-descriptions { font-size: 16px; }
+
+  #game-box {
+    width: 680px;
+    min-height: 560px;
+    padding: 64px 60px;
+    gap: 32px;
+  }
+
+  #target-display   { font-size: 72px; }
+  #countdown        { font-size: 140px; min-height: 176px; }
+  #result-your-time { font-size: 64px; }
+  #result-diff      { font-size: 20px; }
+  #message          { font-size: 17px; }
+  #click-hint       { font-size: 16px; }
+  #round-indicator  { font-size: 15px; }
+
+  button {
+    padding: 18px 44px;
+    font-size: 15px;
+    min-width: 150px;
+  }
+
+  #results-box,
+  #challenge-results-box,
+  #challenge-lobby-box {
+    width: 660px;
+    padding: 56px 52px;
+    gap: 32px;
+  }
+
+  #results-box h2,
+  #challenge-results-box h2,
+  #challenge-lobby-box h2 { font-size: 24px; }
+
+  #rounds-table,
+  #challenge-table { font-size: 16px; }
+
+  #rounds-table th,
+  #challenge-table th { font-size: 13px; }
+
+  #rounds-table th,
+  #rounds-table td,
+  #challenge-table th,
+  #challenge-table td { padding: 14px 10px; }
+
+  #total-value          { font-size: 36px; }
+  #challenge-winner-text { font-size: 32px; }
+  .total-row            { font-size: 16px; }
+  .total-row span:last-child { font-size: 32px; }
+}
