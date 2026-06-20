@@ -14,8 +14,11 @@ body {
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh; /* accounts for mobile browser chrome */
   font-family: 'Courier New', monospace;
   user-select: none;
+  -webkit-user-select: none;
+  padding: 16px;
 }
 
 /* ─── Screen management ──────────────────────────────────── */
@@ -26,6 +29,7 @@ body {
   align-items: center;
   justify-content: center;
   gap: 24px;
+  width: 100%;
 }
 
 .hidden {
@@ -38,11 +42,14 @@ body {
   font-size: 14px;
   color: #555;
   letter-spacing: 0.06em;
+  text-align: center;
 }
 
 #mode-buttons {
   display: flex;
   gap: 16px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 #mode-descriptions {
@@ -65,16 +72,17 @@ h1 {
 
 #game-box {
   border: 2px solid #000;
-  width: 480px;
-  min-height: 400px;
+  width: min(480px, 100%);
+  min-height: min(400px, 70vh);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 40px 32px;
+  padding: 40px 24px;
   gap: 20px;
   transition: background 0.1s;
   cursor: default;
+  touch-action: manipulation; /* prevents 300ms tap delay on iOS */
 }
 
 /* Red background is added by JS when the player should click */
@@ -110,7 +118,7 @@ h1 {
 }
 
 #target-display {
-  font-size: 48px;
+  font-size: clamp(32px, 10vw, 48px);
   font-weight: 700;
   letter-spacing: 0.05em;
 }
@@ -118,9 +126,9 @@ h1 {
 /* ─── Countdown number ───────────────────────────────────── */
 
 #countdown {
-  font-size: 96px;
+  font-size: clamp(64px, 20vw, 96px);
   font-weight: 700;
-  min-height: 120px;
+  min-height: clamp(80px, 15vw, 120px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -140,7 +148,7 @@ h1 {
 /* ─── Round result ───────────────────────────────────────── */
 
 #result-block {
-  display: none; /* shown by JS after the player clicks */
+  display: none; /* shown by JS after the player taps/clicks */
   flex-direction: column;
   align-items: center;
   gap: 8px;
@@ -159,7 +167,7 @@ h1 {
 }
 
 #result-your-time {
-  font-size: 40px;
+  font-size: clamp(28px, 9vw, 40px);
   font-weight: 700;
 }
 
@@ -177,6 +185,8 @@ h1 {
 #game-buttons {
   display: none; /* shown by JS after a round ends */
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 #game-buttons.show {
@@ -186,7 +196,7 @@ h1 {
 /* ─── Shared button style ────────────────────────────────── */
 
 button {
-  padding: 12px 32px;
+  padding: 14px 32px;
   background: #000;
   color: #fff;
   border: none;
@@ -195,6 +205,9 @@ button {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
+  touch-action: manipulation; /* prevents 300ms tap delay on iOS */
+  -webkit-tap-highlight-color: transparent;
+  min-width: 120px;
 }
 
 button:hover {
@@ -211,7 +224,7 @@ button.secondary:hover {
   background: #f5f5f5;
 }
 
-/* ─── Click hint (shown during active phase) ─────────────── */
+/* ─── Tap hint (shown during active phase) ───────────────── */
 
 #click-hint {
   display: none; /* shown by JS when the box turns red */
@@ -219,18 +232,19 @@ button.secondary:hover {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.6;
+  text-align: center;
 }
 
 /* ─── Daily results screen ───────────────────────────────── */
 
 #results-box {
   border: 2px solid #000;
-  width: 520px;
-  padding: 40px 36px;
+  width: min(520px, 100%);
+  padding: 32px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 28px;
+  gap: 24px;
 }
 
 #results-box h2 {
@@ -243,19 +257,19 @@ button.secondary:hover {
 #rounds-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: clamp(12px, 3.5vw, 14px);
 }
 
 #rounds-table th,
 #rounds-table td {
-  padding: 8px 12px;
+  padding: 8px 6px;
   text-align: center;
   border-bottom: 1px solid #e0e0e0;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
 }
 
 #rounds-table th {
-  font-size: 12px;
+  font-size: clamp(10px, 3vw, 12px);
   text-transform: uppercase;
   color: #555;
 }
@@ -276,6 +290,6 @@ button.secondary:hover {
 }
 
 #total-value {
-  font-size: 28px;
+  font-size: clamp(20px, 6vw, 28px);
   font-weight: 700;
 }

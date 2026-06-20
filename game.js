@@ -300,5 +300,10 @@ homeBtnGame.addEventListener('click', (e) => {
 
 homeBtnResults.addEventListener('click', () => showScreen('home'));
 
-// Clicking the red box stops the round
+// Tapping or clicking the red box stops the round.
+// touchend is handled separately so iOS doesn't wait for the 300ms click delay.
+box.addEventListener('touchend', (e) => {
+  e.preventDefault(); // prevents the subsequent click event from double-firing
+  stopRound();
+});
 box.addEventListener('click', () => stopRound());
