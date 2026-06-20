@@ -15,7 +15,7 @@ body {
   justify-content: center;
   min-height: 100vh;
   min-height: 100dvh;
-  font-family: 'Courier New', monospace;
+  font-family: 'Space Grotesk', sans-serif;
   user-select: none;
   -webkit-user-select: none;
   padding: 16px;
@@ -261,7 +261,7 @@ button {
   background: #000;
   color: #fff;
   border: none;
-  font-family: 'Courier New', monospace;
+  font-family: 'Courier New', monospace; /* intentionally monospace — distinct from body text */
   font-size: 14px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
