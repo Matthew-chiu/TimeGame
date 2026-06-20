@@ -18,6 +18,49 @@ body {
   user-select: none;
 }
 
+/* ─── Screen management ──────────────────────────────────── */
+
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ─── Home screen ────────────────────────────────────────── */
+
+#home-subtitle {
+  font-size: 14px;
+  color: #555;
+  letter-spacing: 0.06em;
+}
+
+#mode-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+#mode-descriptions {
+  font-size: 13px;
+  color: #555;
+  line-height: 1.8;
+  text-align: center;
+}
+
+/* ─── Shared heading ─────────────────────────────────────── */
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* ─── Game box ───────────────────────────────────────────── */
 
 #game-box {
@@ -29,7 +72,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 40px 32px;
-  gap: 24px;
+  gap: 20px;
   transition: background 0.1s;
   cursor: default;
 }
@@ -40,13 +83,14 @@ body {
   cursor: pointer;
 }
 
-/* ─── Title ──────────────────────────────────────────────── */
+/* ─── Round indicator (Daily only) ──────────────────────── */
 
-h1 {
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+#round-indicator {
+  font-size: 13px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: #555;
+  min-height: 18px;
 }
 
 /* ─── Target time display ────────────────────────────────── */
@@ -90,9 +134,10 @@ h1 {
   text-align: center;
   color: #333;
   line-height: 1.7;
+  min-height: 20px;
 }
 
-/* ─── Results ────────────────────────────────────────────── */
+/* ─── Round result ───────────────────────────────────────── */
 
 #result-block {
   display: none; /* shown by JS after the player clicks */
@@ -127,10 +172,20 @@ h1 {
 #result-diff.ok   { color: #fd7e14; }
 #result-diff.bad  { color: #dc3545; }
 
-/* ─── Button ─────────────────────────────────────────────── */
+/* ─── In-game buttons ────────────────────────────────────── */
 
-#play-btn {
-  margin-top: 8px;
+#game-buttons {
+  display: none; /* shown by JS after a round ends */
+  gap: 12px;
+}
+
+#game-buttons.show {
+  display: flex;
+}
+
+/* ─── Shared button style ────────────────────────────────── */
+
+button {
   padding: 12px 32px;
   background: #000;
   color: #fff;
@@ -142,8 +197,18 @@ h1 {
   cursor: pointer;
 }
 
-#play-btn:hover {
+button:hover {
   background: #333;
+}
+
+button.secondary {
+  background: #fff;
+  color: #000;
+  border: 2px solid #000;
+}
+
+button.secondary:hover {
+  background: #f5f5f5;
 }
 
 /* ─── Click hint (shown during active phase) ─────────────── */
@@ -154,4 +219,63 @@ h1 {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   opacity: 0.6;
+}
+
+/* ─── Daily results screen ───────────────────────────────── */
+
+#results-box {
+  border: 2px solid #000;
+  width: 520px;
+  padding: 40px 36px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+
+#results-box h2 {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#rounds-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+#rounds-table th,
+#rounds-table td {
+  padding: 8px 12px;
+  text-align: center;
+  border-bottom: 1px solid #e0e0e0;
+  letter-spacing: 0.04em;
+}
+
+#rounds-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #555;
+}
+
+#total-score-block {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  border-top: 2px solid #000;
+  padding-top: 16px;
+}
+
+#total-label {
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+#total-value {
+  font-size: 28px;
+  font-weight: 700;
 }

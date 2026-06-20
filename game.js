@@ -1,63 +1,116 @@
-// ─── Game state ───────────────────────────────────────────
-//
-// States flow in one direction:
-//   idle → countdown → active → result → idle (on Play Again)
+// ─── Constants ────────────────────────────────────────────
 
-let state = 'idle';      // current phase of the game
-let targetTime = 0;      // the random time the player is trying to match
-let startTime = 0;       // performance.now() timestamp when red screen appeared
+const DAILY_ROUNDS = 5;
+const MIN_TIME     = 1;
+const MAX_TIME     = 25;
+
+// ─── Mode & round state ───────────────────────────────────
+
+let mode         = null;   // 'daily' | 'practice'
+let currentRound = 0;
+let roundScores  = [];     // { target, elapsed, diff } per round (daily only)
+
+// ─── Per-round state ──────────────────────────────────────
+//
+// States flow: idle → countdown → active → result
+// (then loops back to idle for the next round)
+
+let state          = 'idle';
+let targetTime     = 0;
+let startTime      = 0;
 let countdownTimer = null;
 
 // ─── DOM references ───────────────────────────────────────
 
-const box           = document.getElementById('game-box');
-const countdown     = document.getElementById('countdown');
-const message       = document.getElementById('message');
-const playBtn       = document.getElementById('play-btn');
-const targetSection = document.getElementById('target-section');
-const targetDisplay = document.getElementById('target-display');
-const resultBlock   = document.getElementById('result-block');
+const screens = {
+  home:    document.getElementById('home-screen'),
+  game:    document.getElementById('game-screen'),
+  results: document.getElementById('results-screen'),
+};
+
+const box            = document.getElementById('game-box');
+const roundIndicator = document.getElementById('round-indicator');
+const targetSection  = document.getElementById('target-section');
+const targetDisplay  = document.getElementById('target-display');
+const countdown      = document.getElementById('countdown');
+const message        = document.getElementById('message');
+const resultBlock    = document.getElementById('result-block');
 const resultYourTime = document.getElementById('result-your-time');
-const resultDiff    = document.getElementById('result-diff');
-const clickHint     = document.getElementById('click-hint');
+const resultDiff     = document.getElementById('result-diff');
+const gameButtons    = document.getElementById('game-buttons');
+const nextBtn        = document.getElementById('next-btn');
+const homeBtnGame    = document.getElementById('home-btn-game');
+const clickHint      = document.getElementById('click-hint');
+
+const roundsBody     = document.getElementById('rounds-body');
+const totalValue     = document.getElementById('total-value');
+const homeBtnResults = document.getElementById('home-btn-results');
+
+// ─── Screen navigation ────────────────────────────────────
+
+function showScreen(name) {
+  Object.entries(screens).forEach(([key, el]) => {
+    el.classList.toggle('hidden', key !== name);
+  });
+}
 
 // ─── Helpers ──────────────────────────────────────────────
 
-// Returns a random number between 1.00 and 25.00 (2 decimal places)
 function randomTime() {
-  const raw = Math.random() * (25 - 1) + 1;
+  const raw = Math.random() * (MAX_TIME - MIN_TIME) + MIN_TIME;
   return Math.round(raw * 100) / 100;
 }
 
-// Formats a number of seconds as "X.XXs"
 function formatSeconds(sec) {
   return sec.toFixed(2) + 's';
 }
 
 // Returns a grade label and CSS class based on how close the player was
 function grade(diff) {
-  if (diff <= 0.25) return { label: 'Excellent!',       cls: 'good' };
-  if (diff <= 0.75) return { label: 'Close!',           cls: 'ok'   };
-  if (diff <= 2.00) return { label: 'Not bad.',         cls: 'ok'   };
-  return              { label: 'Keep practicing.',   cls: 'bad'  };
+  if (diff <= 0.25) return { label: 'Excellent!',     cls: 'good' };
+  if (diff <= 0.75) return { label: 'Close!',         cls: 'ok'   };
+  if (diff <= 2.00) return { label: 'Not bad.',       cls: 'ok'   };
+  return              { label: 'Keep practicing.', cls: 'bad'  };
 }
 
-// ─── Game phases ──────────────────────────────────────────
+// ─── Mode entry points ────────────────────────────────────
 
-function startGame() {
-  if (state === 'countdown' || state === 'active') return;
+function startDaily() {
+  mode         = 'daily';
+  currentRound = 0;
+  roundScores  = [];
+  showScreen('game');
+  startRound();
+}
 
+function startPractice() {
+  mode         = 'practice';
+  currentRound = 0;
+  showScreen('game');
+  startRound();
+}
+
+// ─── Round lifecycle ──────────────────────────────────────
+
+function startRound() {
+  currentRound++;
   targetTime = randomTime();
-  state = 'countdown';
+  state      = 'countdown';
 
-  // Reset UI for a new round
-  playBtn.style.display    = 'none';
-  clickHint.style.display  = 'none';
+  // Reset round UI
+  gameButtons.classList.remove('show');
   resultBlock.classList.remove('show');
   box.classList.remove('active');
-  message.textContent = 'Get ready…';
+  clickHint.style.display  = 'none';
+  countdown.textContent    = '';
+  message.textContent      = 'Get ready…';
 
-  // Show the target time the player is aiming for
+  // Round indicator — only shown in daily mode
+  roundIndicator.textContent = mode === 'daily'
+    ? `Round ${currentRound} of ${DAILY_ROUNDS}`
+    : '';
+
+  // Reveal the target time
   targetSection.style.display = 'flex';
   targetDisplay.textContent   = formatSeconds(targetTime);
 
@@ -78,47 +131,99 @@ function startGame() {
   }, 1000);
 }
 
-// Called immediately after the countdown ends — this is when timing begins
+// Called immediately after the countdown — this is when timing begins
 function activateRed() {
-  state = 'active';
+  state     = 'active';
   startTime = performance.now();
   box.classList.add('active');
-  message.textContent = '';
-  clickHint.style.display = 'block';
+  message.textContent      = '';
+  clickHint.style.display  = 'block';
 }
 
 // Called when the player clicks during the active phase
-function stopGame() {
+function stopRound() {
   if (state !== 'active') return;
 
   const elapsed = (performance.now() - startTime) / 1000;
+  const diff    = Math.abs(elapsed - targetTime);
+  const sign    = elapsed > targetTime ? '+' : '-';
   state = 'result';
 
   box.classList.remove('active');
   clickHint.style.display = 'none';
-  message.textContent = `Target was ${formatSeconds(targetTime)}`;
+  message.textContent     = `Target was ${formatSeconds(targetTime)}`;
 
-  const diff     = Math.abs(elapsed - targetTime);
-  const sign     = elapsed > targetTime ? '+' : '-';
   const { label, cls } = grade(diff);
-
   resultYourTime.textContent = formatSeconds(elapsed);
   resultDiff.textContent     = `${sign}${formatSeconds(diff)} — ${label}`;
   resultDiff.className       = cls;
   resultBlock.classList.add('show');
 
-  playBtn.textContent      = 'Play Again';
-  playBtn.style.display    = 'block';
+  if (mode === 'daily') {
+    roundScores.push({ target: targetTime, elapsed, diff });
+    handleDailyRoundEnd();
+  } else {
+    handlePracticeRoundEnd();
+  }
+}
+
+// ─── Post-round logic ─────────────────────────────────────
+
+function handleDailyRoundEnd() {
+  const isLastRound = currentRound === DAILY_ROUNDS;
+
+  nextBtn.textContent = isLastRound ? 'See Results' : 'Next Round';
+  homeBtnGame.style.display = 'none'; // no bailing out mid-daily
+  gameButtons.classList.add('show');
+
+  nextBtn.onclick = isLastRound ? showDailyResults : startRound;
+}
+
+function handlePracticeRoundEnd() {
+  nextBtn.textContent = 'Play Again';
+  homeBtnGame.style.display = 'block';
+  gameButtons.classList.add('show');
+
+  nextBtn.onclick = startRound;
+}
+
+// ─── Daily results screen ─────────────────────────────────
+
+function showDailyResults() {
+  roundsBody.innerHTML = '';
+
+  let total = 0;
+
+  roundScores.forEach((r, i) => {
+    const sign = r.elapsed > r.target ? '+' : '-';
+    const row  = document.createElement('tr');
+    row.innerHTML = `
+      <td>${i + 1}</td>
+      <td>${formatSeconds(r.target)}</td>
+      <td>${formatSeconds(r.elapsed)}</td>
+      <td>${sign}${formatSeconds(r.diff)}</td>
+    `;
+    roundsBody.appendChild(row);
+    total += r.diff;
+  });
+
+  totalValue.textContent = formatSeconds(total);
+  showScreen('results');
 }
 
 // ─── Event listeners ──────────────────────────────────────
 
-// stopPropagation prevents the button click from also triggering the box click
-playBtn.addEventListener('click', (e) => {
+document.getElementById('daily-btn').addEventListener('click', startDaily);
+document.getElementById('practice-btn').addEventListener('click', startPractice);
+
+// stopPropagation prevents button clicks from triggering the box click
+nextBtn.addEventListener('click', (e) => e.stopPropagation());
+homeBtnGame.addEventListener('click', (e) => {
   e.stopPropagation();
-  startGame();
+  showScreen('home');
 });
 
-box.addEventListener('click', () => {
-  stopGame();
-});
+homeBtnResults.addEventListener('click', () => showScreen('home'));
+
+// Clicking the red box stops the round
+box.addEventListener('click', () => stopRound());
