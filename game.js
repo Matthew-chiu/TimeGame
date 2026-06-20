@@ -571,6 +571,28 @@ nextBtn.addEventListener('click', (e) => e.stopPropagation());
 homeBtnGame.addEventListener('click', (e) => { e.stopPropagation(); goHome(); });
 
 document.getElementById('home-btn-results').addEventListener('click', goHome);
+
+document.getElementById('share-results-btn').addEventListener('click', () => {
+  const total = roundScores.reduce((sum, r) => sum + r.diff, 0);
+  const emojis = roundScores.map(r => {
+    if (r.diff < 0.5) return '🟢';
+    if (r.diff < 1.5) return '🟡';
+    return '🔴';
+  }).join('');
+  const date = new Date().toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', timeZone: 'America/Los_Angeles' });
+  const text = `Tap The Time (${date})\n${emojis}\nOff by ${formatSeconds(total)} total\nCan you beat me?! - tapthetime.com`;
+
+  if (navigator.share) {
+    navigator.share({ text });
+  } else {
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('share-results-btn');
+      const orig = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = orig, 2000);
+    });
+  }
+});
 document.getElementById('challenge-results-home-btn').addEventListener('click', goHome);
 
 document.getElementById('rematch-btn').addEventListener('click', () => {

@@ -436,7 +436,8 @@ button.secondary:hover {
   color: #000;
 }
 
-#challenge-result-buttons {
+#challenge-result-buttons,
+#results-buttons {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
