@@ -1,16 +1,16 @@
 // ─── Constants ────────────────────────────────────────────
 
-const DAILY_ROUNDS    = 5;
-const MIN_TIME        = 1;
-const MAX_TIME        = 25;
-const STORAGE_KEY     = 'timeit_daily'; // localStorage key for daily save data
-const STORAGE_KEY     = 'timeit_daily';   // localStorage key for daily save data
+const DAILY_ROUNDS = 5;
+const MIN_TIME     = 1;
+const MAX_TIME     = 25;
+const STORAGE_KEY  = 'timeit_daily'; // localStorage key for daily save data
 
 // ─── Mode & round state ───────────────────────────────────
 
-let mode         = null;   // 'daily' | 'practice'
-let currentRound = 0;
-let roundScores  = [];     // { target, elapsed, diff } per round (daily only)
+let mode             = null;  // 'daily' | 'practice'
+let currentRound     = 0;
+let roundScores      = [];    // { target, elapsed, diff } per round (daily only)
+let dailyTargetTimes = [];    // pre-generated seeded times for today's daily
 
 // ─── Per-round state ──────────────────────────────────────
 //
@@ -58,13 +58,13 @@ function showScreen(name) {
 
 // ─── Helpers ──────────────────────────────────────────────
 
+function formatSeconds(sec) {
+  return sec.toFixed(2) + 's';
+}
+
 function randomTime() {
   const raw = Math.random() * (MAX_TIME - MIN_TIME) + MIN_TIME;
   return Math.round(raw * 100) / 100;
-}
-
-function formatSeconds(sec) {
-  return sec.toFixed(2) + 's';
 }
 
 // Returns a grade label and CSS class based on how close the player was
@@ -75,11 +75,36 @@ function grade(diff) {
   return              { label: 'Keep practicing.', cls: 'bad'  };
 }
 
-// ─── Daily save data (localStorage) ──────────────────────
+// ─── Seeded random number generator ──────────────────────
+//
+// Using mulberry32 so every player gets the exact same target
+// times for a given date. Seeded with YYYYMMDD as an integer.
+
+function mulberry32(seed) {
+  return function () {
+    seed |= 0;
+    seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 
 function todayString() {
   return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
 }
+
+// Generates today's 5 target times — same for every player
+function generateDailyTargets() {
+  const seed = parseInt(todayString().replace(/-/g, ''), 10); // e.g. 20260620
+  const rand = mulberry32(seed);
+  return Array.from({ length: DAILY_ROUNDS }, () => {
+    const raw = rand() * (MAX_TIME - MIN_TIME) + MIN_TIME;
+    return Math.round(raw * 100) / 100;
+  });
+}
+
+// ─── Daily save data (localStorage) ──────────────────────
 
 function getDailySave() {
   try {
@@ -104,15 +129,16 @@ function hasPlayedTodaysDaily() {
 
 function startDaily() {
   if (hasPlayedTodaysDaily()) {
-    // Already played today — show their saved results instead of replaying
+    // Already played today — show saved results without allowing replay
     roundScores = getDailySave().scores;
     showDailyResults(true);
     return;
   }
 
-  mode         = 'daily';
-  currentRound = 0;
-  roundScores  = [];
+  mode             = 'daily';
+  currentRound     = 0;
+  roundScores      = [];
+  dailyTargetTimes = generateDailyTargets();
   showScreen('game');
   startRound();
 }
@@ -128,16 +154,21 @@ function startPractice() {
 
 function startRound() {
   currentRound++;
-  targetTime = randomTime();
-  state      = 'countdown';
+
+  // Daily uses pre-seeded targets so all players see the same times
+  targetTime = mode === 'daily'
+    ? dailyTargetTimes[currentRound - 1]
+    : randomTime();
+
+  state = 'countdown';
 
   // Reset round UI
   gameButtons.classList.remove('show');
   resultBlock.classList.remove('show');
   box.classList.remove('active');
-  clickHint.style.display  = 'none';
-  countdown.textContent    = '';
-  message.textContent      = 'Get ready…';
+  clickHint.style.display = 'none';
+  countdown.textContent   = '';
+  message.textContent     = 'Get ready…';
 
   // Round indicator — only shown in daily mode
   roundIndicator.textContent = mode === 'daily'
@@ -170,8 +201,8 @@ function activateRed() {
   state     = 'active';
   startTime = performance.now();
   box.classList.add('active');
-  message.textContent      = '';
-  clickHint.style.display  = 'block';
+  message.textContent     = '';
+  clickHint.style.display = 'block';
 }
 
 // Called when the player clicks during the active phase
@@ -195,6 +226,13 @@ function stopRound() {
 
   if (mode === 'daily') {
     roundScores.push({ target: targetTime, elapsed, diff });
+
+    // Save immediately after the last round so the lock is set
+    // even if the user closes before clicking "See Results"
+    if (roundScores.length === DAILY_ROUNDS) {
+      saveDailyResult(roundScores);
+    }
+
     handleDailyRoundEnd();
   } else {
     handlePracticeRoundEnd();
@@ -206,7 +244,7 @@ function stopRound() {
 function handleDailyRoundEnd() {
   const isLastRound = currentRound === DAILY_ROUNDS;
 
-  nextBtn.textContent = isLastRound ? 'See Results' : 'Next Round';
+  nextBtn.textContent       = isLastRound ? 'See Results' : 'Next Round';
   homeBtnGame.style.display = 'none'; // no bailing out mid-daily
   gameButtons.classList.add('show');
 
@@ -214,7 +252,7 @@ function handleDailyRoundEnd() {
 }
 
 function handlePracticeRoundEnd() {
-  nextBtn.textContent = 'Play Again';
+  nextBtn.textContent       = 'Play Again';
   homeBtnGame.style.display = 'block';
   gameButtons.classList.add('show');
 
@@ -224,11 +262,6 @@ function handlePracticeRoundEnd() {
 // ─── Daily results screen ─────────────────────────────────
 
 function showDailyResults(alreadyPlayed = false) {
-  // Save to localStorage on first completion (not when viewing a saved result)
-  if (!alreadyPlayed) {
-    saveDailyResult(roundScores);
-  }
-
   roundsBody.innerHTML = '';
   let total = 0;
 
@@ -247,7 +280,6 @@ function showDailyResults(alreadyPlayed = false) {
 
   totalValue.textContent = formatSeconds(total);
 
-  // Tell the user if they're viewing a previously completed daily
   document.getElementById('results-box').querySelector('h2').textContent =
     alreadyPlayed ? "Today's Results" : 'Daily Results';
 
