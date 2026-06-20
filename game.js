@@ -3,7 +3,8 @@
 const DAILY_ROUNDS = 5;
 const MIN_TIME     = 1;
 const MAX_TIME     = 25;
-const STORAGE_KEY  = 'timeit_daily'; // localStorage key for daily save data
+const STORAGE_KEY       = 'timeit_daily';    // localStorage key for daily save data
+const HOWTO_SEEN_KEY    = 'timeit_howto_seen'; // set after the modal is dismissed
 
 // ─── Mode & round state ───────────────────────────────────
 
@@ -286,7 +287,26 @@ function showDailyResults(alreadyPlayed = false) {
   showScreen('results');
 }
 
+// ─── How to play modal ────────────────────────────────────
+
+function initHowTo() {
+  const overlay = document.getElementById('howto-overlay');
+  const closeBtn = document.getElementById('howto-close');
+
+  if (localStorage.getItem(HOWTO_SEEN_KEY)) {
+    overlay.classList.add('hidden');
+    return;
+  }
+
+  closeBtn.addEventListener('click', () => {
+    localStorage.setItem(HOWTO_SEEN_KEY, '1');
+    overlay.classList.add('hidden');
+  });
+}
+
 // ─── Event listeners ──────────────────────────────────────
+
+initHowTo();
 
 document.getElementById('daily-btn').addEventListener('click', startDaily);
 document.getElementById('practice-btn').addEventListener('click', startPractice);
