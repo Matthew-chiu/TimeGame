@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Time It</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Courier New', monospace;
+      user-select: none;
+    }
+
+    #game-box {
+      border: 2px solid #000;
+      width: 480px;
+      min-height: 400px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 32px;
+      gap: 24px;
+      position: relative;
+      transition: background 0.1s;
+      cursor: default;
+    }
+
+    #game-box.active {
+      background: #ff3b30;
+      cursor: pointer;
+    }
+
+    h1 {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    #target-display {
+      font-size: 48px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+    }
+
+    #target-label {
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    #countdown {
+      font-size: 96px;
+      font-weight: 700;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #message {
+      font-size: 14px;
+      letter-spacing: 0.06em;
+      text-align: center;
+      color: #333;
+      line-height: 1.7;
+    }
+
+    #result-block {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      text-align: center;
+    }
+
+    #result-block.show {
+      display: flex;
+    }
+
+    #result-title {
+      font-size: 13px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #555;
+    }
+
+    #result-your-time {
+      font-size: 40px;
+      font-weight: 700;
+    }
+
+    #result-diff {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    #result-diff.good {
+      color: #28a745;
+    }
+
+    #result-diff.ok {
+      color: #fd7e14;
+    }
+
+    #result-diff.bad {
+      color: #dc3545;
+    }
+
+    #play-btn {
+      margin-top: 8px;
+      padding: 12px 32px;
+      background: #000;
+      color: #fff;
+      border: none;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    #play-btn:hover {
+      background: #333;
+    }
+
+    #click-hint {
+      font-size: 13px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div id="game-box">
+    <h1>Time It</h1>
+
+    <div id="target-section" style="display:none; flex-direction:column; align-items:center; gap:6px;">
+      <div id="target-label">Target time</div>
+      <div id="target-display">—</div>
+    </div>
+
+    <div id="countdown"></div>
+    <div id="message">Click START to begin.</div>
+
+    <div id="result-block">
+      <div id="result-title">Your time</div>
+      <div id="result-your-time"></div>
+      <div id="result-diff"></div>
+    </div>
+
+    <button id="play-btn">Start</button>
+    <div id="click-hint" style="display:none;">Click anywhere to stop</div>
+  </div>
+
+  <script>
+    const box = document.getElementById('game-box');
+    const countdown = document.getElementById('countdown');
+    const message = document.getElementById('message');
+    const playBtn = document.getElementById('play-btn');
+    const targetSection = document.getElementById('target-section');
+    const targetDisplay = document.getElementById('target-display');
+    const resultBlock = document.getElementById('result-block');
+    const resultYourTime = document.getElementById('result-your-time');
+    const resultDiff = document.getElementById('result-diff');
+    const clickHint = document.getElementById('click-hint');
+
+    let state = 'idle'; // idle | countdown | active | result
+    let targetTime = 0;
+    let startTime = 0;
+    let countdownTimer = null;
+
+    function randomTime() {
+      const raw = Math.random() * (25 - 1) + 1;
+      return Math.round(raw * 100) / 100;
+    }
+
+    function fmt(sec) {
+      return sec.toFixed(2) + 's';
+    }
+
+    function startGame() {
+      if (state === 'countdown' || state === 'active') return;
+
+      targetTime = randomTime();
+      state = 'countdown';
+
+      playBtn.style.display = 'none';
+      resultBlock.classList.remove('show');
+      clickHint.style.display = 'none';
+      message.textContent = 'Get ready…';
+      box.classList.remove('active');
+
+      targetSection.style.display = 'flex';
+      targetDisplay.textContent = fmt(targetTime);
+
+      const steps = ['3', '2', '1', 'GO'];
+      let i = 0;
+
+      countdown.textContent = steps[i];
+
+      countdownTimer = setInterval(() => {
+        i++;
+        if (i < steps.length) {
+          countdown.textContent = steps[i];
+        }
+        if (i === steps.length - 1) {
+          // "GO" shown — start timing on next tick clear
+        }
+        if (i >= steps.length) {
+          clearInterval(countdownTimer);
+          countdown.textContent = '';
+          activateRed();
+        }
+      }, 1000);
+    }
+
+    function activateRed() {
+      state = 'active';
+      startTime = performance.now();
+      box.classList.add('active');
+      message.textContent = '';
+      clickHint.style.display = 'block';
+    }
+
+    function stopGame() {
+      if (state !== 'active') return;
+
+      const elapsed = (performance.now() - startTime) / 1000;
+      state = 'result';
+
+      box.classList.remove('active');
+      clickHint.style.display = 'none';
+      countdown.textContent = '';
+      message.textContent = `Target was ${fmt(targetTime)}`;
+
+      const diff = Math.abs(elapsed - targetTime);
+      const sign = elapsed > targetTime ? '+' : '-';
+
+      resultYourTime.textContent = fmt(elapsed);
+
+      let grade, cls;
+      if (diff <= 0.25) { grade = 'Excellent!'; cls = 'good'; }
+      else if (diff <= 0.75) { grade = 'Close!'; cls = 'ok'; }
+      else if (diff <= 2) { grade = 'Not bad.'; cls = 'ok'; }
+      else { grade = 'Keep practicing.'; cls = 'bad'; }
+
+      resultDiff.textContent = `${sign}${fmt(diff)} — ${grade}`;
+      resultDiff.className = cls;
+      resultBlock.classList.add('show');
+
+      playBtn.textContent = 'Play Again';
+      playBtn.style.display = 'block';
+    }
+
+    playBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startGame();
+    });
+
+    box.addEventListener('click', () => {
+      if (state === 'active') stopGame();
+    });
+  </script>
+</body>
+</html>
