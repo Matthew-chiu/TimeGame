@@ -443,6 +443,17 @@ button.secondary:hover {
   justify-content: center;
 }
 
+/* Share button only makes sense on mobile */
+#lobby-share-btn {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  #lobby-share-btn {
+    display: block;
+  }
+}
+
 /* ─── Desktop overrides (768px+) ─────────────────────────── */
 
 @media (min-width: 768px) {
