@@ -564,7 +564,7 @@ document.getElementById('lobby-copy-btn').addEventListener('click', () => {
 
 document.getElementById('lobby-share-btn').addEventListener('click', () => {
   const link = document.getElementById('lobby-link-text').textContent;
-  navigator.share({ title: 'Tap The Time', text: 'Challenge me on Tap The Time', url: link });
+  navigator.share({ title: 'Tap The Time', text: 'Come test your sense of time and challenge me on Tap The Time!', url: link });
 });
 
 nextBtn.addEventListener('click', (e) => e.stopPropagation());
