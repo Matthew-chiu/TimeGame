@@ -154,7 +154,8 @@ function generateTargets(seed) {
 }
 
 function todayString() {
-  return new Date().toISOString().slice(0, 10);
+  // Use PT so the daily resets at midnight Pacific time (handles PST/PDT automatically)
+  return new Date().toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles' });
 }
 
 // ─── Daily save data (localStorage) ──────────────────────
