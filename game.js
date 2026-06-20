@@ -1,8 +1,10 @@
 // ─── Constants ────────────────────────────────────────────
 
-const DAILY_ROUNDS = 5;
-const MIN_TIME     = 1;
-const MAX_TIME     = 25;
+const DAILY_ROUNDS    = 5;
+const MIN_TIME        = 1;
+const MAX_TIME        = 25;
+const STORAGE_KEY     = 'timeit_daily'; // localStorage key for daily save data
+const STORAGE_KEY     = 'timeit_daily';   // localStorage key for daily save data
 
 // ─── Mode & round state ───────────────────────────────────
 
@@ -73,9 +75,41 @@ function grade(diff) {
   return              { label: 'Keep practicing.', cls: 'bad'  };
 }
 
+// ─── Daily save data (localStorage) ──────────────────────
+
+function todayString() {
+  return new Date().toISOString().slice(0, 10); // "YYYY-MM-DD"
+}
+
+function getDailySave() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveDailyResult(scores) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    date:   todayString(),
+    scores: scores,
+  }));
+}
+
+function hasPlayedTodaysDaily() {
+  return getDailySave().date === todayString();
+}
+
 // ─── Mode entry points ────────────────────────────────────
 
 function startDaily() {
+  if (hasPlayedTodaysDaily()) {
+    // Already played today — show their saved results instead of replaying
+    roundScores = getDailySave().scores;
+    showDailyResults(true);
+    return;
+  }
+
   mode         = 'daily';
   currentRound = 0;
   roundScores  = [];
@@ -176,7 +210,7 @@ function handleDailyRoundEnd() {
   homeBtnGame.style.display = 'none'; // no bailing out mid-daily
   gameButtons.classList.add('show');
 
-  nextBtn.onclick = isLastRound ? showDailyResults : startRound;
+  nextBtn.onclick = isLastRound ? () => showDailyResults() : startRound;
 }
 
 function handlePracticeRoundEnd() {
@@ -189,9 +223,13 @@ function handlePracticeRoundEnd() {
 
 // ─── Daily results screen ─────────────────────────────────
 
-function showDailyResults() {
-  roundsBody.innerHTML = '';
+function showDailyResults(alreadyPlayed = false) {
+  // Save to localStorage on first completion (not when viewing a saved result)
+  if (!alreadyPlayed) {
+    saveDailyResult(roundScores);
+  }
 
+  roundsBody.innerHTML = '';
   let total = 0;
 
   roundScores.forEach((r, i) => {
@@ -208,6 +246,11 @@ function showDailyResults() {
   });
 
   totalValue.textContent = formatSeconds(total);
+
+  // Tell the user if they're viewing a previously completed daily
+  document.getElementById('results-box').querySelector('h2').textContent =
+    alreadyPlayed ? "Today's Results" : 'Daily Results';
+
   showScreen('results');
 }
 
