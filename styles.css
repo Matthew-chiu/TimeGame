@@ -1,0 +1,157 @@
+/* ─── Reset ─────────────────────────────────────────────── */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* ─── Page ───────────────────────────────────────────────── */
+
+body {
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  font-family: 'Courier New', monospace;
+  user-select: none;
+}
+
+/* ─── Game box ───────────────────────────────────────────── */
+
+#game-box {
+  border: 2px solid #000;
+  width: 480px;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  gap: 24px;
+  transition: background 0.1s;
+  cursor: default;
+}
+
+/* Red background is added by JS when the player should click */
+#game-box.active {
+  background: #ff3b30;
+  cursor: pointer;
+}
+
+/* ─── Title ──────────────────────────────────────────────── */
+
+h1 {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ─── Target time display ────────────────────────────────── */
+
+#target-section {
+  display: none; /* shown by JS once a round starts */
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+#target-label {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+#target-display {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ─── Countdown number ───────────────────────────────────── */
+
+#countdown {
+  font-size: 96px;
+  font-weight: 700;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Status message ─────────────────────────────────────── */
+
+#message {
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: #333;
+  line-height: 1.7;
+}
+
+/* ─── Results ────────────────────────────────────────────── */
+
+#result-block {
+  display: none; /* shown by JS after the player clicks */
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+#result-block.show {
+  display: flex;
+}
+
+#result-title {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+#result-your-time {
+  font-size: 40px;
+  font-weight: 700;
+}
+
+#result-diff {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+#result-diff.good { color: #28a745; }
+#result-diff.ok   { color: #fd7e14; }
+#result-diff.bad  { color: #dc3545; }
+
+/* ─── Button ─────────────────────────────────────────────── */
+
+#play-btn {
+  margin-top: 8px;
+  padding: 12px 32px;
+  background: #000;
+  color: #fff;
+  border: none;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+#play-btn:hover {
+  background: #333;
+}
+
+/* ─── Click hint (shown during active phase) ─────────────── */
+
+#click-hint {
+  display: none; /* shown by JS when the box turns red */
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
