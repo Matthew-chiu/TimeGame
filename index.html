@@ -1,166 +1,704 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tap The Time</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bullet Swap</title>
+<style>
+  :root {
+    --bg: #f5f6f8; --card: #ffffff; --ink: #1c2230; --muted: #687083; --line: #e3e6eb;
+    --field: #ffffff; --hover: #f1f3f6; --accent: #2457d6; --accent-ink: #ffffff; --accent-soft: #edf2ff;
+    --warn: #b42318; --warn-soft: #fdecea; --ok: #12784a; --ok-soft: #e7f6ee; --preview-bg: #e9ebef;
+    --shadow: 0 1px 2px rgba(16, 24, 40, .06), 0 1px 3px rgba(16, 24, 40, .08);
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1116; --card: #171a21; --ink: #e7e9ee; --muted: #9aa2b1; --line: #2a2f3a;
+      --field: #12151b; --hover: #1f232c; --accent: #7aa2ff; --accent-ink: #0c1222; --accent-soft: #1c2538;
+      --warn: #ff8a7a; --warn-soft: #2c1816; --ok: #5ad39a; --ok-soft: #13261d; --preview-bg: #0b0d11;
+      --shadow: 0 1px 2px rgba(0, 0, 0, .4);
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  .wrap { max-width: 1440px; margin: 0 auto; padding: 24px 20px 64px; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+
+  /* Header */
+  .top { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .logo { width: 36px; height: 36px; border-radius: 9px; background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center; flex: none; }
+  h1 { font-size: 18px; margin: 0; display: flex; align-items: center; gap: 8px; }
+  .pill { font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); }
+  .sub { margin: 2px 0 0; color: var(--muted); }
+
+  /* Buttons and fields */
+  .btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 8px;
+    border: 1px solid var(--line); background: var(--card); cursor: pointer; white-space: nowrap; font-weight: 500; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.ghost { border-color: transparent; background: transparent; color: var(--accent); padding: 0 8px; }
+  .btn.ghost:hover { background: var(--accent-soft); }
+  .icon { width: 28px; height: 28px; border-radius: 6px; border: 0; background: transparent; color: var(--muted);
+    cursor: pointer; display: inline-grid; place-items: center; flex: none; }
+  .icon:hover { background: var(--hover); color: var(--ink); }
+  .icon.danger:hover { background: var(--warn-soft); color: var(--warn); }
+  .icon:disabled { opacity: .3; cursor: default; background: transparent; }
+  .field { height: 34px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); min-width: 0; }
+  .field:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* Upload */
+  .drop { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 48px 20px; text-align: center;
+    border: 2px dashed var(--line); border-radius: 14px; background: var(--card); cursor: pointer; transition: .15s; }
+  .drop:hover, .drop.over { border-color: var(--accent); background: var(--accent-soft); }
+  .drop strong { font-size: 16px; }
+  .drop span { color: var(--muted); }
+  .drop svg { color: var(--accent); margin-bottom: 6px; }
+  .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 16px; }
+  .step { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+  .step b { display: block; margin-bottom: 2px; }
+  .step span { color: var(--muted); }
+  .num { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent); font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+
+  /* Toolbar */
+  .toolbar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+    padding: 10px 12px; margin: 0 -12px 16px; background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+  .filechip { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  .filechip .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+  .spacer { flex: 1; }
+  .cluster { display: flex; align-items: center; gap: 6px; }
+  .namefield { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--field); height: 34px; }
+  .namefield:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .namefield input { border: 0; background: transparent; height: 32px; padding: 0 2px 0 10px; width: 190px; outline: none; }
+  .namefield span { color: var(--muted); padding-right: 10px; }
+  .divider { width: 1px; height: 24px; background: var(--line); }
+
+  /* Layout */
+  .main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 20px; align-items: start; }
+  .main.loaded { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+
+  /* Section cards */
+  .group { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; box-shadow: var(--shadow); }
+  .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .label { font-weight: 600; font-size: 15px; margin: 2px 0 12px; }
+  .slots { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  .row { display: flex; align-items: flex-start; gap: 6px; }
+  .pick { position: relative; flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 8px; background: var(--field);
+    padding: 8px 30px 8px 10px; transition: border-color .1s; }
+  .pick:hover { border-color: var(--accent); }
+  .pick:focus-within { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+  .pick select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+  .pick .chev { position: absolute; right: 9px; top: 11px; color: var(--muted); pointer-events: none; }
+  .delta { flex: none; width: 54px; margin-top: 8px; text-align: center; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums;
+    padding: 2px 0; border-radius: 999px; color: var(--muted); background: var(--hover); cursor: help; }
+  .delta.over { color: var(--warn); background: var(--warn-soft); }
+  .delta.under { color: var(--ok); background: var(--ok-soft); }
+  .row .icons { display: flex; margin-top: 3px; }
+  .add { margin-top: 8px; }
+
+  /* Bank */
+  details.bank { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+  details.bank summary { cursor: pointer; color: var(--muted); font-weight: 600; font-size: 13px; list-style: none; display: flex; align-items: center; gap: 6px; }
+  details.bank summary::-webkit-details-marker { display: none; }
+  details.bank summary .caret { transition: transform .15s; }
+  details.bank[open] summary .caret { transform: rotate(90deg); }
+  .count { font-size: 11px; padding: 0 7px; border-radius: 999px; background: var(--hover); }
+  .bank ul { list-style: none; padding: 0; margin: 10px 0; display: grid; gap: 4px; }
+  .bank li { display: flex; align-items: flex-start; gap: 8px; padding: 6px 4px 6px 10px; border-radius: 8px; }
+  .bank li:hover { background: var(--hover); }
+  .bank li .t { flex: 1; min-width: 0; padding-top: 4px; }
+  .tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ok);
+    background: var(--ok-soft); padding: 1px 6px; border-radius: 4px; margin-left: 6px; vertical-align: 1px; }
+  .bank-add { display: flex; gap: 8px; align-items: flex-end; }
+  .bank-add textarea { flex: 1; resize: vertical; min-height: 40px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--field); }
+
+  /* Preview */
+  #previewPane { position: sticky; top: 70px; max-height: calc(100vh - 86px); overflow: auto;
+    background: var(--preview-bg); border: 1px solid var(--line); border-radius: 12px; }
+  #previewHead { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px; background: var(--preview-bg); font-weight: 600; }
+  #previewStatus { font-weight: 400; font-size: 12px; color: var(--muted); }
+  #previewPane .docx-wrapper { background: transparent; padding: 4px 10px 10px; }
+  #previewPane .docx-wrapper > section.docx { box-shadow: 0 2px 10px rgba(0,0,0,.18); margin-bottom: 12px; }
+  #previewStage { position: relative; }
+  #previewNext { position: absolute; inset: 0; visibility: hidden; }
+
+  /* Status toast */
+  #status { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
+    background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; box-shadow: 0 6px 24px rgba(0,0,0,.2);
+    transition: .2s; max-width: calc(100vw - 32px); z-index: 20; }
+  #status.show { opacity: 1; transform: translate(-50%, 0); }
+
+  /* Confirm dialog */
+  dialog.confirm { border: 1px solid var(--line); border-radius: 14px; padding: 0; width: min(440px, calc(100vw - 32px));
+    background: var(--card); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.3); }
+  dialog.confirm::backdrop { background: rgba(10, 12, 18, .45); }
+  dialog.confirm form { padding: 20px; }
+  dialog.confirm .head { display: flex; gap: 12px; align-items: flex-start; }
+  dialog.confirm .warn-icon { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--warn-soft); color: var(--warn); }
+  dialog.confirm h2 { font-size: 16px; margin: 4px 0 6px; }
+  dialog.confirm p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+  dialog.confirm code { color: var(--ink); font-weight: 600; font-family: inherit; }
+  dialog.confirm .skip { display: flex; align-items: center; gap: 8px; margin: 16px 0 0 46px; color: var(--muted); font-size: 13px; cursor: pointer; }
+  dialog.confirm .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  .btn.danger { background: var(--warn); border-color: var(--warn); color: #fff; }
+  @media (prefers-color-scheme: dark) { .btn.danger { color: #1a0d0b; } }
+
+  @media (max-width: 960px) {
+    .main.loaded { grid-template-columns: minmax(0, 1fr); }
+    #previewPane { position: static; max-height: none; }
+    .steps { grid-template-columns: minmax(0, 1fr); }
+    .toolbar { position: static; }
+  }
+  @media (max-width: 560px) {
+    .wrap { padding: 16px 16px 48px; }
+    .toolbar { margin: 0 0 16px; padding: 10px 0; }
+    .divider, .spacer { display: none; }
+    .cluster { flex-wrap: wrap; width: 100%; }
+    .cluster .field, .namefield { flex: 1; }
+    .namefield input { width: 0; flex: 1; }
+    .delta { display: none; }
+  }
+</style>
+<script src="vendor/jszip.min.js"></script>
+<script src="vendor/docx-preview.min.js"></script>
+<script src="docx.js"></script>
 </head>
 <body>
-
-  <!-- ── Global counter ─────────────────────────────────── -->
-  <div id="global-counter">
-    Total Global Seconds Played: <span id="global-value">—</span>
+<div class="wrap">
+<header class="top">
+  <div class="logo" aria-hidden="true">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>
   </div>
+  <div>
+    <h1>Bullet Swap <span class="pill">Test build</span></h1>
+    <p class="sub">Swap resume bullets in and out. Your Word formatting stays exactly as it was. Your file never leaves your computer.</p>
+  </div>
+</header>
 
-  <!-- ── Home screen ────────────────────────────────────── -->
-  <div id="home-screen" class="screen">
+<input type="file" id="file" accept=".docx" hidden>
+<div id="intro">
+  <label class="drop" id="drop" for="file">
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M12 18v-6M9 15l3-3 3 3"/></svg>
+    <strong>Drop your resume here</strong>
+    <span>or click to choose a Word file (.docx)</span>
+  </label>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><b>Upload</b><span>Bullets are found automatically, grouped by job or section.</span></div>
+    <div class="step"><div class="num">2</div><b>Swap</b><span>Pick a different bullet for any slot, or add your own to each section's bank.</span></div>
+    <div class="step"><div class="num">3</div><b>Save</b><span>Get a .docx with your original fonts, spacing and layout. The preview shows it live.</span></div>
+  </div>
+</div>
 
-    <h1>Tap The Time</h1>
-    <p id="home-subtitle">How well do you know a second?</p>
+<div id="controls" class="toolbar" hidden>
+  <div class="filechip">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+    <span class="name" id="docName"></span>
+    <label class="btn ghost" for="file">Change</label>
+  </div>
+  <div class="spacer"></div>
+  <div class="cluster">
+    <input id="vname" class="field" placeholder="Version name" size="12">
+    <button id="saveV" class="btn">Save version</button>
+    <select id="versions" class="field"><option value="">Load version…</option></select>
+  </div>
+  <div class="divider"></div>
+  <div class="cluster">
+    <label class="namefield" title="File name"><input id="fname" placeholder="File name" aria-label="File name"><span>.docx</span></label>
+    <button id="save" class="btn primary">Save to folder…</button>
+    <button id="pickDir" class="btn ghost" hidden title="Choose a different folder to save into">Change folder</button>
+    <button id="download" class="btn" title="Download through the browser">Download</button>
+  </div>
+</div>
 
-    <div id="mode-buttons">
-      <button id="daily-btn">Daily</button>
-      <button id="practice-btn">Practice</button>
-      <button id="challenge-btn">Challenge</button>
+<div class="main" id="main">
+  <div id="groups"></div>
+  <div id="previewPane" hidden>
+    <div id="previewHead"><span>Preview</span><span id="previewStatus"></span></div>
+    <div id="previewStage"><div id="previewOut"></div><div id="previewNext"></div></div>
+  </div>
+</div>
+</div>
+<div id="status" role="status" aria-live="polite"></div>
+<dialog class="confirm" id="confirm">
+  <form method="dialog">
+    <div class="head">
+      <div class="warn-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01"/><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></div>
+      <div><h2 id="confirmTitle"></h2><p id="confirmBody"></p></div>
     </div>
-
-    <p id="mode-descriptions">
-      <span><strong>Daily</strong> — 5 rounds, same targets for everyone. Once per day.</span><br>
-      <span><strong>Practice</strong> — One round at a time.</span><br>
-      <span><strong>Challenge</strong> — Play 5 rounds against a friend in real time.</span>
-    </p>
-
-  </div>
-
-  <!-- ── Challenge lobby ────────────────────────────────── -->
-  <div id="challenge-lobby-screen" class="screen hidden">
-    <div id="challenge-lobby-box">
-
-      <h2 id="lobby-title"></h2>
-      <p id="lobby-status"></p>
-
-      <div id="lobby-link-row" class="hidden">
-        <span id="lobby-link-text"></span>
-        <button id="lobby-copy-btn">Copy</button>
-        <button id="lobby-share-btn">Share</button>
-      </div>
-      <p id="lobby-copy-confirm" class="hidden">Copied!</p>
-
-      <button id="lobby-ready-btn" disabled>Ready</button>
-      <button id="lobby-home-btn" class="secondary">Home</button>
-
+    <label class="skip"><input type="checkbox" id="confirmSkip"> Don't ask me again</label>
+    <div class="actions">
+      <button class="btn" value="cancel" autofocus>Cancel</button>
+      <button class="btn danger" value="ok" id="confirmOk">Replace</button>
     </div>
-  </div>
+  </form>
+</dialog>
 
-  <!-- ── Game screen ────────────────────────────────────── -->
-  <div id="game-screen" class="screen hidden">
-    <div id="game-box">
+<script>
+const $ = (s) => document.querySelector(s);
+let doc = null;          // { id, name, groups }
+let state = [];          // per group: { bank: [{id,text,original}], slots: [bankId] }
+const uid = () => Math.random().toString(36).slice(2, 9);
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
 
-      <div id="round-indicator"></div>
+$("#file").onchange = (e) => { if (e.target.files[0]) openFile(e.target.files[0]); e.target.value = ""; };
+const drop = $("#drop");
+["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((t) => drop.addEventListener(t, () => drop.classList.remove("over")));
+drop.addEventListener("drop", (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+// Dropping anywhere else shouldn't make the browser open the file and leave the app.
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("drop", (e) => e.preventDefault());
 
-      <div id="target-section">
-        <div id="target-label">Target time</div>
-        <div id="target-display">—</div>
-      </div>
+// Status messages show as a toast that fades after a few seconds.
+let toastTimer = null;
+new MutationObserver(() => {
+  const el = $("#status");
+  clearTimeout(toastTimer);
+  el.classList.toggle("show", !!el.textContent);
+  if (el.textContent && !/…$/.test(el.textContent)) toastTimer = setTimeout(() => el.classList.remove("show"), 3500);
+}).observe($("#status"), { childList: true, characterData: true, subtree: true });
 
-      <div id="countdown"></div>
-      <div id="message"></div>
+async function openFile(f) {
+  if (!/\.docx$/i.test(f.name)) { $("#status").textContent = "Choose a Word file (.docx)"; return; }
+  $("#status").textContent = "Reading…";
+  // Everything happens here in the browser: the file is never sent anywhere.
+  let buffer, parsed;
+  try {
+    buffer = await f.arrayBuffer();
+    parsed = await BulletDocx.parse(buffer);
+  } catch (e) {
+    console.error(e);
+    $("#status").textContent = "Couldn't read that file. Is it a Word .docx?";
+    return;
+  }
+  doc = { name: f.name, buffer, groups: parsed.groups };
+  lastPlan = "";   // new file: always render a fresh preview
+  const total = doc.groups.reduce((n, g) => n + g.bullets.length, 0);
+  $("#status").textContent = `Found ${total} bullets in ${doc.groups.length} sections`;
+  state = doc.groups.map((g) => {
+    // Bank persists per section label, so re-uploading the same resume keeps your extra bullets.
+    // Every bullet in the uploaded file gets a bank entry (added back if an older saved bank
+    // lacks it), so each slot starts as the file's own bullet, never a stand-in.
+    const bank = store.get("bank:" + g.label, null) || [];
+    const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
+    const slots = g.bullets.map((b) => {
+      let entry = bank.find((x) => norm(x.text) === norm(b.text));
+      if (!entry) {
+        entry = { id: uid(), text: b.text, original: true };
+        bank.push(entry);
+      }
+      return entry.id;
+    });
+    store.set("bank:" + g.label, bank);
+    return { bank, slots, originalLen: g.bullets.map((b) => b.text.length) };
+  });
+  $("#fname").value = f.name.replace(/\.docx$/i, "") + "_edited";
+  $("#docName").textContent = f.name;
+  $("#docName").title = f.name;
+  $("#intro").hidden = true;
+  $("#controls").hidden = false;
+  $("#previewPane").hidden = false;
+  $("#main").classList.add("loaded");
+  openBanks.clear();
+  refreshVersions();
+  render();
+}
 
-      <div id="result-block">
-        <div id="result-title">Your time</div>
-        <div id="result-your-time"></div>
-        <div id="result-diff"></div>
-      </div>
+function save(gi) { store.set("bank:" + doc.groups[gi].label, state[gi].bank); }
 
-      <div id="game-buttons">
-        <button id="next-btn"></button>
-        <button id="home-btn-game">Home</button>
-      </div>
+const ICON = {
+  up: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  copy: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>',
+  trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  chev: '<svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  caret: '<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+};
+const openBanks = new Set();   // which sections have their bank expanded (survives re-render)
 
-      <div id="click-hint">Tap to stop</div>
+function render() {
+  const root = $("#groups");
+  root.innerHTML = "";
+  doc.groups.forEach((g, gi) => {
+    const s = state[gi];
+    const box = document.createElement("div");
+    box.className = "group";
+    box.innerHTML = `<div class="eyebrow"></div><div class="label"></div><ol class="slots"></ol>
+      <button class="btn ghost add">+ Add bullet</button>
+      <details class="bank"><summary>${ICON.caret}Bullet bank <span class="count"></span></summary><ul></ul>
+      <div class="bank-add"><textarea rows="2" placeholder="Write a new bullet for this section…"></textarea>
+      <button class="btn addBank">Add to bank</button></div></details>`;
+    // Labels look like "PROFESSIONAL EXPERIENCE | Acme | Engineer": split the all-caps heading out.
+    const parts = g.label.split(" | ");
+    const hasHeading = parts.length > 1 && parts[0] === parts[0].toUpperCase() && /[A-Z]/.test(parts[0]);
+    box.querySelector(".eyebrow").textContent = hasHeading ? parts[0] : "";
+    box.querySelector(".label").textContent = hasHeading ? parts.slice(1).join(" | ") : g.label;
 
-    </div>
-  </div>
+    const slotsEl = box.querySelector(".slots");
+    s.slots.forEach((bid, si) => {
+      const row = document.createElement("li");
+      row.className = "row";
+      const cur = (s.bank.find((b) => b.id === bid) || {}).text || "";
+      const pick = document.createElement("div");
+      pick.className = "pick";
+      pick.textContent = cur;
+      pick.insertAdjacentHTML("beforeend", ICON.chev);
+      const sel = document.createElement("select");
+      sel.setAttribute("aria-label", `Bullet ${si + 1}`);
+      s.bank.forEach((b) => {
+        const o = document.createElement("option");
+        o.value = b.id;
+        o.textContent = b.text;
+        if (b.id === bid) o.selected = true;
+        sel.appendChild(o);
+      });
+      sel.onchange = () => { s.slots[si] = sel.value; render(); };
+      pick.appendChild(sel);
+      // Length vs the original bullet in this slot: a rough "will it still fit" signal.
+      const base = s.originalLen[si] ?? s.originalLen[s.originalLen.length - 1] ?? cur.length;
+      const d = cur.length - base;
+      const delta = document.createElement("span");
+      const isNew = si >= s.originalLen.length;
+      delta.className = "delta" + (!isNew && d > 20 ? " over" : !isNew && d < -20 ? " under" : "");
+      delta.textContent = isNew ? "new" : (d > 0 ? "+" : "") + d;
+      delta.title = isNew
+        ? "An extra bullet that wasn't in the original file"
+        : `${d > 0 ? d + " characters longer" : d < 0 ? -d + " characters shorter" : "Same length"} than the original bullet here` +
+          (d > 20 ? ". It may push the page longer." : "");
+      const icons = document.createElement("div");
+      icons.className = "icons";
+      const swap = (j) => { [s.slots[j], s.slots[si]] = [s.slots[si], s.slots[j]]; render(); };
+      const up = iconBtn(ICON.up, "Move up", () => swap(si - 1));
+      const down = iconBtn(ICON.down, "Move down", () => swap(si + 1));
+      up.disabled = si === 0;
+      down.disabled = si === s.slots.length - 1;
+      const rm = iconBtn(ICON.x, "Remove from resume", () => { s.slots.splice(si, 1); render(); }, "danger");
+      icons.append(up, down, rm);
+      row.append(pick, delta, icons);
+      slotsEl.appendChild(row);
+    });
 
-  <!-- ── Waiting overlay (shown while opponent finishes) ── -->
-  <div id="waiting-overlay" class="hidden">
-    <p>Waiting for opponent to finish…</p>
-  </div>
+    box.querySelector(".add").onclick = () => {
+      const unused = s.bank.find((b) => !s.slots.includes(b.id)) || s.bank[0];
+      if (unused) { s.slots.push(unused.id); render(); }
+    };
 
-  <!-- ── Daily results screen ───────────────────────────── -->
-  <div id="results-screen" class="screen hidden">
-    <div id="results-box">
+    const details = box.querySelector("details");
+    details.open = openBanks.has(gi);
+    details.ontoggle = () => (details.open ? openBanks.add(gi) : openBanks.delete(gi));
+    box.querySelector(".count").textContent = s.bank.length;
+    const ul = box.querySelector("ul");
+    s.bank.forEach((b) => {
+      const li = document.createElement("li");
+      const t = document.createElement("span");
+      t.className = "t";
+      t.textContent = b.text;
+      if (s.slots.includes(b.id)) t.insertAdjacentHTML("beforeend", '<span class="tag">In use</span>');
+      li.append(
+        t,
+        iconBtn(ICON.copy, "Copy text", () => navigator.clipboard.writeText(b.text).then(() => ($("#status").textContent = "Copied"))),
+        iconBtn(ICON.trash, "Delete from bank", () => {
+          s.bank = s.bank.filter((x) => x.id !== b.id);
+          s.slots = s.slots.filter((x) => x !== b.id);
+          save(gi); render();
+        }, "danger")
+      );
+      ul.appendChild(li);
+    });
+    const ta = box.querySelector("textarea");
+    const addToBank = () => {
+      const text = ta.value.trim();
+      if (!text) return;
+      s.bank.push({ id: uid(), text });
+      save(gi); render();
+    };
+    box.querySelector(".addBank").onclick = addToBank;
+    ta.onkeydown = (e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) addToBank(); };
+    root.appendChild(box);
+  });
+  schedulePreview();
+}
 
-      <h2 id="results-title">Daily Results</h2>
+function iconBtn(svg, label, fn, extra = "") {
+  const b = document.createElement("button");
+  b.className = "icon " + extra;
+  b.innerHTML = svg;
+  b.title = label;
+  b.setAttribute("aria-label", label);
+  b.onclick = fn;
+  return b;
+}
 
-      <table id="rounds-table">
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Target</th>
-            <th>Your time</th>
-            <th>Off by</th>
-          </tr>
-        </thead>
-        <tbody id="rounds-body"></tbody>
-      </table>
+function buildPlan() {
+  return doc.groups.map((g, gi) => ({
+    indices: g.bullets.map((b) => b.index),
+    texts: state[gi].slots.map((id) => (state[gi].bank.find((b) => b.id === id) || {}).text || ""),
+  }));
+}
 
-      <div id="total-score-block">
-        <span id="total-label">Total score</span>
-        <span id="total-value"></span>
-      </div>
+// Live preview: rebuild the .docx on the server exactly as Download would, then render it here.
+let previewTimer = null, previewSeq = 0, lastPlan = "";
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(updatePreview, 250);
+}
+async function updatePreview() {
+  const planJson = JSON.stringify(buildPlan());
+  if (planJson === lastPlan) return;   // e.g. a bank edit that didn't change any slot
+  const seq = ++previewSeq;
+  $("#previewStatus").textContent = "Updating…";
+  try {
+    const blob = await buildDocx();
+    if (seq !== previewSeq) return;     // a newer change is already on its way
+    // Render off-screen first, then swap, so the pane doesn't flash blank.
+    const next = $("#previewNext");
+    next.innerHTML = "";
+    await docx.renderAsync(blob, next, next, {
+      className: "docx", inWrapper: true, breakPages: true,
+      ignoreLastRenderedPageBreak: true, experimental: true,
+    });
+    if (seq !== previewSeq) return;
+    applyDefaultParagraphStyle(next);
+    fixLineHeights(next);
+    // docx-preview lays out tab stops ~500ms after rendering by measuring the page,
+    // so let that finish here, at full size, before the page is moved into the scaled pane.
+    await new Promise((res) => setTimeout(res, 650));
+    if (seq !== previewSeq) return;
+    fixTrailingTabs(next);
+    const out = $("#previewOut");
+    out.replaceChildren(...next.childNodes);
+    lastPlan = planJson;
+    fitPreview();
+    $("#previewStatus").textContent = "";
+  } catch (e) {
+    if (seq === previewSeq) $("#previewStatus").textContent = "Preview failed: " + e.message;
+  }
+}
+// docx-preview differs from Word in a few ways that change the page layout; correct them here.
+// Paragraphs with no style use the default ("Normal") style in Word, but docx-preview only
+// styles their text when the paragraph carries the style's class, so the text falls back to
+// the theme font. Give those paragraphs the default style's class.
+function applyDefaultParagraphStyle(root) {
+  const css = [...root.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+  const m = css.match(/\.docx p,\s*p\.([\w-]+) span/);
+  if (!m) return;
+  root.querySelectorAll("section.docx p").forEach((p) => {
+    if (![...p.classList].some((c) => c.startsWith("docx_"))) p.classList.add(m[1]);
+  });
+}
 
-      <div id="results-buttons">
-        <button id="share-results-btn">Share</button>
-        <button id="home-btn-results" class="secondary">Home</button>
-      </div>
+// Word's "single" line is the font's own line height (ascent + descent + gap), not 1.0 × font size.
+// Measure it from the font the browser actually draws with: a line at line-height "normal"
+// is ascent + descent + line gap, read from the font file itself. Cached per font list.
+const fontLineCache = new Map();
+function fontLine(el) {
+  const cs = getComputedStyle(el);
+  const key = cs.fontFamily + "|" + cs.fontWeight + "|" + cs.fontStyle;
+  if (!fontLineCache.has(key)) {
+    const probe = document.createElement("div");
+    probe.textContent = "Hg";
+    Object.assign(probe.style, {
+      position: "absolute", visibility: "hidden", whiteSpace: "nowrap",
+      fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, fontStyle: cs.fontStyle,
+      fontSize: "100px", lineHeight: "normal",
+    });
+    document.body.appendChild(probe);
+    fontLineCache.set(key, probe.getBoundingClientRect().height / 100);
+    probe.remove();
+  }
+  return fontLineCache.get(key);
+}
+function fixLineHeights(root) {
+  // "Auto" line spacing (e.g. 1.06 lines) comes through as a bare multiplier of the font size.
+  root.querySelectorAll("section.docx [style*='line-height']").forEach((el) => {
+    const v = el.style.lineHeight;
+    if (!/^[\d.]+$/.test(v)) return;   // exact / at-least spacing is in pt: already right
+    const textEl = el.querySelector("span") || el;
+    el.style.lineHeight = (parseFloat(v) * fontLine(textEl)).toFixed(3);
+  });
+  // Paragraphs with no explicit spacing still need Word's single line, not the browser's "normal".
+  root.querySelectorAll("section.docx p").forEach((p) => {
+    if (!p.style.lineHeight) p.style.lineHeight = fontLine(p.querySelector("span") || p).toFixed(3);
+  });
+}
+// A tab with nothing after it (often a right tab at the margin) gets a width that wraps the line.
+function fixTrailingTabs(root) {
+  root.querySelectorAll(".docx-tab-stop").forEach((tab) => {
+    const p = tab.closest("p");
+    if (!p) return;
+    const r = document.createRange();
+    r.setStartAfter(tab);
+    r.setEndAfter(p.lastChild);
+    if (!r.toString().trim()) tab.style.wordSpacing = "0";
+  });
+}
 
-    </div>
-  </div>
+// Shrink the page to the pane's width (never enlarge it).
+function fitPreview() {
+  const out = $("#previewOut");
+  const page = out.querySelector("section.docx");
+  if (!page) return;
+  out.style.zoom = 1;
+  const z = Math.min(1, ($("#previewPane").clientWidth - 4) / (page.offsetWidth + 16));
+  out.style.zoom = z;
+}
+window.addEventListener("resize", fitPreview);
 
-  <!-- ── Challenge results screen ───────────────────────── -->
-  <div id="challenge-results-screen" class="screen hidden">
-    <div id="challenge-results-box">
+const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+// The edited file, built here from the original upload and the current choices.
+async function buildDocx() {
+  return new Blob([await BulletDocx.rebuild(doc.buffer, buildPlan())], { type: DOCX_TYPE });
+}
+const fileName = () => ($("#fname").value.trim() || "resume").replace(/[\\/:*?"<>|]+/g, "_") + ".docx";
 
-      <h2 id="challenge-winner-text"></h2>
+// "Save to folder": in Chrome and Edge the page can write straight into a folder the user picks
+// once, replacing a file with the same name. Elsewhere it falls back to a normal download.
+const canSaveToFolder = "showDirectoryPicker" in window;
+let saveDir = null;
+const idb = (mode, fn) => new Promise((resolve, reject) => {
+  const open = indexedDB.open("bullet-swap", 1);
+  open.onupgradeneeded = () => open.result.createObjectStore("kv");
+  open.onerror = () => reject(open.error);
+  open.onsuccess = () => {
+    const req = fn(open.result.transaction("kv", mode).objectStore("kv"));
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  };
+});
+function showSaveDir() {
+  if (!canSaveToFolder) {
+    $("#save").hidden = true;
+    $("#download").classList.add("primary");
+    $("#download").title = "Download the edited file (this browser can't save into a folder directly)";
+    return;
+  }
+  $("#save").textContent = saveDir ? `Save to “${saveDir.name}”` : "Save to folder…";
+  $("#save").title = saveDir
+    ? `Saves into the “${saveDir.name}” folder, replacing a file with the same name`
+    : "Pick a folder once, then saving writes there directly (no “(1)” copies)";
+  $("#pickDir").hidden = !saveDir;
+}
+async function pickFolder() {
+  try {
+    saveDir = await window.showDirectoryPicker({ id: "bullet-swap", mode: "readwrite", startIn: "downloads" });
+  } catch (e) {
+    if (e.name !== "AbortError") $("#status").textContent = "Couldn't use that folder. Try another one.";
+    return false;
+  }
+  try { await idb("readwrite", (st) => st.put(saveDir, "saveDir")); } catch {}
+  showSaveDir();
+  return true;
+}
+if (canSaveToFolder) idb("readonly", (st) => st.get("saveDir")).then((h) => { if (h) saveDir = h; showSaveDir(); }).catch(() => showSaveDir());
+else showSaveDir();
+$("#pickDir").onclick = pickFolder;
 
-      <table id="challenge-table">
-        <thead>
-          <tr>
-            <th>Round</th>
-            <th>Target</th>
-            <th>You</th>
-            <th>Opponent</th>
-          </tr>
-        </thead>
-        <tbody id="challenge-body"></tbody>
-      </table>
+// Ask before replacing something. Resolves true to go ahead. "Don't ask again" is remembered per kind.
+function confirmReplace(kind, title, bodyHtml, okLabel = "Replace") {
+  if (store.get("noWarn:" + kind, false)) return Promise.resolve(true);
+  const dlg = $("#confirm");
+  $("#confirmTitle").textContent = title;
+  $("#confirmBody").innerHTML = bodyHtml;
+  $("#confirmOk").textContent = okLabel;
+  $("#confirmSkip").checked = false;
+  dlg.returnValue = "";
+  dlg.showModal();
+  return new Promise((resolve) => {
+    dlg.addEventListener("close", () => {
+      const ok = dlg.returnValue === "ok";
+      if (ok && $("#confirmSkip").checked) store.set("noWarn:" + kind, true);
+      resolve(ok);
+    }, { once: true });
+  });
+}
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
-      <div id="challenge-totals-block">
-        <div class="total-row">
-          <span>Your total</span>
-          <span id="my-total-display"></span>
-        </div>
-        <div class="total-row">
-          <span>Opponent's total</span>
-          <span id="opp-total-display"></span>
-        </div>
-      </div>
+$("#save").onclick = async () => {
+  if (!saveDir && !(await pickFolder())) return;
+  const name = fileName();
+  try {
+    // A remembered folder needs the user's OK again after the browser restarts.
+    if ((await saveDir.queryPermission({ mode: "readwrite" })) !== "granted" &&
+        (await saveDir.requestPermission({ mode: "readwrite" })) !== "granted") {
+      $("#status").textContent = "No permission to save in that folder";
+      return;
+    }
+    let exists = true;
+    try { await saveDir.getFileHandle(name); } catch { exists = false; }
+    if (exists && !(await confirmReplace("file", "Replace existing file?",
+      `<code>${esc(saveDir.name + "/" + name)}</code> already exists. Saving will overwrite it, and the old version can't be recovered.`))) return;
+    $("#status").textContent = "Saving…";
+    const blob = await buildDocx();
+    const fh = await saveDir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(blob);
+    await w.close();
+    $("#status").textContent = `${exists ? "Replaced" : "Saved"} ${saveDir.name}/${name}`;
+  } catch (e) {
+    console.error(e);
+    $("#status").textContent = "Save failed: " + e.message;
+  }
+};
 
-      <div id="challenge-result-buttons">
-        <button id="rematch-btn">Rematch</button>
-        <button id="challenge-results-home-btn" class="secondary">Home</button>
-      </div>
+$("#download").onclick = async () => {
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(await buildDocx());
+    a.download = fileName();
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  } catch (e) {
+    console.error(e);
+    $("#status").textContent = "Export failed: " + e.message;
+  }
+};
 
-    </div>
-  </div>
+// Versions = saved slot selections (as bullet text) for this resume.
+function vKey() { return "versions:" + doc.name; }
+function refreshVersions() {
+  const sel = $("#versions");
+  sel.innerHTML = '<option value="">Load version…</option>';
+  Object.keys(store.get(vKey(), {})).forEach((n) => {
+    const o = document.createElement("option");
+    o.value = o.textContent = n;
+    sel.appendChild(o);
+  });
+}
+$("#saveV").onclick = async () => {
+  const name = $("#vname").value.trim();
+  if (!name) return;
+  const all = store.get(vKey(), {});
+  if (all[name] && !(await confirmReplace("version", "Replace saved version?",
+    `A version named <code>${esc(name)}</code> already exists for this resume. Saving will replace its bullet choices.`))) return;
+  all[name] = state.map((s) => s.slots.map((id) => (s.bank.find((b) => b.id === id) || {}).text));
+  store.set(vKey(), all);
+  refreshVersions();
+  $("#status").textContent = `Saved version "${name}"`;
+};
+$("#versions").onchange = (e) => {
+  const v = store.get(vKey(), {})[e.target.value];
+  if (!v) return;
+  state.forEach((s, gi) => {
+    s.slots = (v[gi] || []).map((t) => (s.bank.find((b) => b.text === t) || {}).id).filter(Boolean);
+  });
+  render();
+};
 
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
-  <script src="game.js"></script>
+</script>
 </body>
 </html>
