@@ -1,0 +1,762 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resume Customizer</title>
+<style>
+  :root {
+    --bg: #fafafa; --panel: #ffffff; --ink: #18181b; --muted: #71717a; --faint: #a1a1aa; --line: #e4e4e7;
+    --hover: #f4f4f5; --field: #ffffff; --accent: #18181b; --accent-ink: #ffffff; --sel: #f4f4f5;
+    --warn: #c2410c; --warn-soft: #fff1e8; --danger: #dc2626; --preview-bg: #f0f0f2;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111113; --panel: #18181b; --ink: #ececee; --muted: #8b8b93; --faint: #5f5f67; --line: #2a2a2e;
+      --hover: #1f1f23; --field: #141416; --accent: #ececee; --accent-ink: #111113; --sel: #232327;
+      --warn: #fb923c; --warn-soft: #2a1a10; --danger: #f87171; --preview-bg: #0c0c0e;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* Top bar */
+  .top { display: flex; align-items: center; gap: 10px; height: 52px; padding: 0 20px; border-bottom: 1px solid var(--line);
+    background: var(--panel); position: sticky; top: 0; z-index: 10; }
+  .crumbs { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+  .crumbs a { color: var(--muted); text-decoration: none; }
+  .crumbs a:hover { color: var(--ink); }
+  .crumbs .sep { color: var(--faint); }
+  .crumbs strong { font-weight: 600; }
+  .spacer { flex: 1; }
+  .file { display: flex; align-items: center; gap: 8px; min-width: 0; color: var(--muted); }
+  .file .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px; color: var(--ink); }
+
+  /* Controls */
+  .btn { height: 32px; padding: 0 12px; border-radius: 7px; border: 1px solid var(--line); background: var(--panel);
+    font-weight: 500; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+  .btn:hover { background: var(--hover); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.primary:hover { opacity: .88; }
+  .btn.quiet { border-color: transparent; background: transparent; color: var(--muted); padding: 0 8px; }
+  .btn.quiet:hover { color: var(--ink); background: var(--hover); }
+  .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+  .field { height: 32px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--field); min-width: 0; }
+  .field:focus { outline: none; border-color: var(--ink); }
+  .icon { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--faint);
+    display: inline-grid; place-items: center; flex: none; }
+  .icon:hover { background: var(--hover); color: var(--ink); }
+  .icon.del:hover { color: var(--danger); }
+  .icon:disabled { opacity: .35; pointer-events: none; }
+
+  /* Upload */
+  .upload { max-width: 520px; margin: 120px auto; padding: 0 20px; }
+  .drop { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 56px 24px; border: 1px dashed var(--faint);
+    border-radius: 12px; background: var(--panel); text-align: center; color: var(--muted); }
+  .drop.over { border-color: var(--ink); background: var(--hover); }
+
+  /* Sub bar: tabs + actions */
+  .subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .tabs { display: flex; gap: 2px; padding: 3px; background: var(--hover); border-radius: 8px; }
+  .tabs button { border: 0; background: transparent; padding: 4px 14px; border-radius: 6px; color: var(--muted); font-weight: 500; }
+  .tabs button[aria-selected="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+  .group-ctl { display: flex; align-items: center; gap: 6px; }
+  .vline { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+  .namefield { display: flex; align-items: center; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: var(--field); }
+  .namefield:focus-within { border-color: var(--ink); }
+  .namefield input { border: 0; background: transparent; outline: none; width: 180px; padding: 0 2px 0 10px; height: 30px; }
+  .namefield span { color: var(--faint); padding-right: 10px; }
+
+  /* Resume view */
+  .resume { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; padding: 20px; max-width: 1480px; margin: 0 auto; align-items: start; }
+  .sec { padding: 4px 0 20px; }
+  .sec + .sec { border-top: 1px solid var(--line); padding-top: 20px; }
+  .sec-head { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 10px; }
+  .sec-head > div { flex: 1; min-width: 0; }
+  .eyebrow { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); font-weight: 600; }
+  .sec-title { font-weight: 600; font-size: 15px; }
+  .slots { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  .slot { display: flex; align-items: center; gap: 6px; }
+  .slot-main { flex: 1; min-width: 0; text-align: left; border: 1px solid var(--line); background: var(--panel);
+    border-radius: 8px; padding: 9px 12px; display: grid; gap: 1px; }
+  .slot-main:hover { border-color: var(--faint); }
+  .slot-main.open { border-color: var(--ink); }
+  .slot-main .n { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slot-main .t { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .len { flex: none; width: 46px; text-align: right; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .len.long { color: var(--warn); }
+  .slot .acts { display: flex; opacity: 0; transition: opacity .1s; }
+  .slot:hover .acts, .slot:focus-within .acts { opacity: 1; }
+  .add-slot { margin-top: 6px; }
+
+  /* Picker */
+  .picker { position: absolute; z-index: 30; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.14); padding: 6px; max-height: 360px; overflow: auto; }
+  .opt { display: grid; gap: 1px; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 7px; }
+  .opt:hover, .opt:focus-visible { background: var(--hover); outline: none; }
+  .opt.cur { background: var(--sel); }
+  .opt .n { font-weight: 500; }
+  .opt .t { color: var(--muted); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .picker .foot { border-top: 1px solid var(--line); margin-top: 6px; padding-top: 6px; }
+
+  /* Preview */
+  #previewPane { position: sticky; top: 72px; max-height: calc(100vh - 92px); overflow: auto; background: var(--preview-bg);
+    border-radius: 10px; border: 1px solid var(--line); }
+  #previewHead { position: sticky; top: 0; z-index: 1; display: flex; justify-content: space-between; padding: 8px 12px;
+    background: var(--preview-bg); color: var(--muted); font-size: 12px; }
+  #previewPane .docx-wrapper { background: transparent; padding: 0 10px 10px; }
+  #previewPane .docx-wrapper > section.docx { box-shadow: 0 1px 6px rgba(0,0,0,.12); margin-bottom: 12px; }
+  #previewStage { position: relative; }
+  #previewNext { position: absolute; inset: 0; visibility: hidden; }
+
+  /* Bullets view */
+  .library { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1180px; margin: 0 auto; min-height: calc(100vh - 106px); }
+  .side { border-right: 1px solid var(--line); padding: 16px 10px; }
+  .side button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 7px; margin-bottom: 2px; }
+  .side button:hover { background: var(--hover); }
+  .side button[aria-current="true"] { background: var(--sel); }
+  .side .r { display: flex; justify-content: space-between; gap: 8px; }
+  .side .r span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .side .c { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .lib-main { padding: 20px 28px 60px; }
+  .lib-head { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+  .lib-head > div { flex: 1; min-width: 0; }
+  .lib-head .sec-title { font-size: 18px; }
+  .cards { display: grid; gap: 10px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 12px 14px; }
+  .card:focus-within { border-color: var(--faint); }
+  .card .name { width: 100%; border: 0; background: transparent; font-weight: 600; padding: 2px 0; outline: none; }
+  .card .name::placeholder { color: var(--faint); font-weight: 500; }
+  .card textarea { width: 100%; border: 0; background: transparent; resize: none; outline: none; padding: 2px 0;
+    color: var(--ink); line-height: 1.5; overflow: hidden; }
+  .card .meta { display: flex; align-items: center; gap: 10px; margin-top: 4px; color: var(--faint); font-size: 12px; }
+  .card .meta .used { color: var(--muted); }
+  .empty { color: var(--muted); padding: 24px 0; }
+
+  /* Toast and dialogs */
+  #status { position: fixed; left: 50%; bottom: 20px; transform: translate(-50%, 8px); opacity: 0; pointer-events: none;
+    background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 8px; transition: .18s; z-index: 40; max-width: calc(100vw - 32px); }
+  #status.show { opacity: 1; transform: translate(-50%, 0); }
+  dialog { border: 1px solid var(--line); border-radius: 12px; padding: 0; width: min(400px, calc(100vw - 32px));
+    background: var(--panel); color: var(--ink); box-shadow: 0 16px 48px rgba(0,0,0,.25); }
+  dialog::backdrop { background: rgba(0,0,0,.35); }
+  dialog form { padding: 18px; }
+  dialog h2 { font-size: 15px; margin: 0 0 6px; }
+  dialog p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+  dialog .field { width: 100%; margin-top: 8px; }
+  dialog .skip { display: flex; gap: 8px; align-items: center; margin-top: 14px; color: var(--muted); font-size: 13px; }
+  dialog .actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+  @media (max-width: 960px) {
+    .resume { grid-template-columns: minmax(0, 1fr); }
+    #previewPane { position: static; max-height: none; }
+    .library { grid-template-columns: minmax(0, 1fr); }
+    .side { border-right: 0; border-bottom: 1px solid var(--line); display: flex; overflow-x: auto; gap: 4px; padding: 8px; }
+    .side button { width: auto; flex: none; max-width: 220px; }
+    .lib-main { padding: 16px; }
+    .slot .acts { opacity: 1; }
+  }
+  @media (max-width: 600px) {
+    .top { padding: 0 16px; }
+    .file .name { display: none; }
+    .subbar { padding: 10px 16px; }
+    .vline { display: none; }
+    .group-ctl { width: 100%; }
+    .group-ctl .field, .namefield { flex: 1; }
+    .namefield input { width: 0; flex: 1; }
+    .resume { padding: 16px; }
+    .len { display: none; }
+  }
+</style>
+<script src="vendor/jszip.min.js"></script>
+<script src="vendor/docx-preview.min.js"></script>
+<script src="docx.js"></script>
+</head>
+<body>
+<header class="top">
+  <nav class="crumbs"><a href="../">Prototyping</a><span class="sep">/</span><strong>Resume Customizer</strong></nav>
+  <div class="spacer"></div>
+  <div class="file" id="fileInfo" hidden><span class="name" id="docName"></span><label class="btn quiet" for="file">Change</label></div>
+</header>
+<input type="file" id="file" accept=".docx" hidden>
+
+<div class="upload" id="intro">
+  <label class="drop" id="drop" for="file">
+    <span class="btn primary">Upload resume</span>
+    <span>or drop a .docx file here</span>
+  </label>
+</div>
+
+<div id="app" hidden>
+  <div class="subbar">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tabResume" aria-selected="true">Resume</button>
+      <button role="tab" id="tabBullets" aria-selected="false">Bullets</button>
+    </div>
+    <div class="spacer"></div>
+    <div class="group-ctl">
+      <select id="versions" class="field" aria-label="Versions"><option value="">Versions</option></select>
+      <button id="saveV" class="btn">Save version</button>
+    </div>
+    <div class="vline"></div>
+    <div class="group-ctl" id="saveControls">
+      <label class="namefield"><input id="fname" aria-label="File name"><span>.docx</span></label>
+      <button id="save" class="btn primary">Save to folder…</button>
+      <button id="pickDir" class="btn quiet" hidden>Change folder</button>
+      <button id="download" class="btn">Download</button>
+    </div>
+  </div>
+
+  <div class="resume" id="viewResume">
+    <div id="sections"></div>
+    <div id="previewPane">
+      <div id="previewHead"><span>Preview</span><span id="previewStatus"></span></div>
+      <div id="previewStage"><div id="previewOut"></div><div id="previewNext"></div></div>
+    </div>
+  </div>
+
+  <div class="library" id="viewBullets" hidden>
+    <aside class="side" id="libNav"></aside>
+    <section class="lib-main" id="libMain"></section>
+  </div>
+</div>
+
+<div class="picker" id="picker" hidden></div>
+<div id="status" role="status" aria-live="polite"></div>
+
+<dialog id="confirm">
+  <form method="dialog">
+    <h2 id="confirmTitle"></h2>
+    <p id="confirmBody"></p>
+    <label class="skip"><input type="checkbox" id="confirmSkip"> Don't ask again</label>
+    <div class="actions">
+      <button class="btn" value="cancel" autofocus>Cancel</button>
+      <button class="btn danger" value="ok" id="confirmOk">Replace</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="ask">
+  <form method="dialog">
+    <h2 id="askTitle"></h2>
+    <input class="field" id="askInput" autocomplete="off">
+    <div class="actions">
+      <button class="btn" value="cancel">Cancel</button>
+      <button class="btn primary" value="ok">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let doc = null;        // { name, buffer, groups }
+let state = [];        // per section: { bank: [{ id, name, text }], slots: [bankId], originalLen: [n] }
+let libSec = 0;        // section shown in the Bullets view
+const uid = () => Math.random().toString(36).slice(2, 9);
+const store = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+};
+const norm = (t) => (t || "").replace(/\s+/g, " ").trim();
+const autoName = (t) => {
+  const w = norm(t).split(" ");
+  return w.slice(0, 6).join(" ") + (w.length > 6 ? "…" : "");
+};
+const nameOf = (b) => (b.name || "").trim() || autoName(b.text) || "Untitled";
+const textOf = (s, id) => (s.bank.find((b) => b.id === id) || {}).text || "";
+function secParts(label) {
+  const parts = label.split(" | ");
+  const isHeading = parts.length > 1 && parts[0] === parts[0].toUpperCase() && /[A-Z]/.test(parts[0]);
+  return { heading: isHeading ? parts[0] : "", title: isHeading ? parts.slice(1).join(" | ") : label };
+}
+function h(tag, attrs = {}, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") el.className = v;
+    else if (k.startsWith("on")) el[k] = v;
+    else if (v !== false && v != null) el.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false && c !== "") el.append(c);
+  return el;
+}
+const ICON = {
+  up: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
+  down: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
+  x: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+};
+function iconBtn(svg, label, fn, cls = "") {
+  const b = h("button", { class: "icon " + cls, title: label, "aria-label": label, onclick: fn });
+  b.innerHTML = svg;
+  return b;
+}
+
+// ---------- Upload ----------
+$("#file").onchange = (e) => { if (e.target.files[0]) openFile(e.target.files[0]); e.target.value = ""; };
+const drop = $("#drop");
+["dragenter", "dragover"].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((t) => drop.addEventListener(t, () => drop.classList.remove("over")));
+drop.addEventListener("drop", (e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) openFile(f); });
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("drop", (e) => e.preventDefault());
+
+let toastTimer = null;
+new MutationObserver(() => {
+  const el = $("#status");
+  clearTimeout(toastTimer);
+  el.classList.toggle("show", !!el.textContent);
+  if (el.textContent && !/…$/.test(el.textContent)) toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+}).observe($("#status"), { childList: true, characterData: true, subtree: true });
+
+async function openFile(f) {
+  if (!/\.docx$/i.test(f.name)) { $("#status").textContent = "That isn't a .docx file"; return; }
+  $("#status").textContent = "Reading…";
+  let buffer, parsed;
+  try {
+    buffer = await f.arrayBuffer();
+    parsed = await BulletDocx.parse(buffer);
+  } catch (e) {
+    console.error(e);
+    $("#status").textContent = "Couldn't read that file";
+    return;
+  }
+  doc = { name: f.name, buffer, groups: parsed.groups };
+  lastPlan = "";
+  // Each section's bullets are kept in the browser by section name, so they survive re-uploads.
+  // Any bullet in the file that's missing from the saved list is added back.
+  state = doc.groups.map((g) => {
+    const bank = store.get("bank:" + g.label, null) || [];
+    const slots = g.bullets.map((b) => {
+      let entry = bank.find((x) => norm(x.text) === norm(b.text));
+      if (!entry) { entry = { id: uid(), name: "", text: b.text }; bank.push(entry); }
+      return entry.id;
+    });
+    store.set("bank:" + g.label, bank);
+    return { bank, slots, originalLen: g.bullets.map((b) => b.text.length) };
+  });
+  const total = doc.groups.reduce((n, g) => n + g.bullets.length, 0);
+  $("#status").textContent = `${total} bullets in ${doc.groups.length} ${doc.groups.length === 1 ? "section" : "sections"}`;
+  $("#fname").value = f.name.replace(/\.docx$/i, "");
+  $("#docName").textContent = f.name;
+  $("#docName").title = f.name;
+  $("#intro").hidden = true;
+  $("#app").hidden = false;
+  $("#fileInfo").hidden = false;
+  libSec = 0;
+  refreshVersions();
+  showView("resume");
+}
+function save(gi) { store.set("bank:" + doc.groups[gi].label, state[gi].bank); }
+
+// ---------- Views ----------
+function showView(v) {
+  $("#tabResume").setAttribute("aria-selected", v === "resume");
+  $("#tabBullets").setAttribute("aria-selected", v === "bullets");
+  $("#viewResume").hidden = v !== "resume";
+  $("#viewBullets").hidden = v !== "bullets";
+  closePicker();
+  if (v === "resume") { renderResume(); fitPreview(); } else renderLibrary();
+}
+$("#tabResume").onclick = () => showView("resume");
+$("#tabBullets").onclick = () => showView("bullets");
+function openLibrary(gi) { libSec = gi; showView("bullets"); }
+
+// ---------- Resume view ----------
+function renderResume() {
+  const root = $("#sections");
+  root.replaceChildren();
+  doc.groups.forEach((g, gi) => {
+    const s = state[gi];
+    const { heading, title } = secParts(g.label);
+    const list = h("ol", { class: "slots" });
+    s.slots.forEach((bid, si) => {
+      const b = s.bank.find((x) => x.id === bid) || { text: "" };
+      const isNew = si >= s.originalLen.length;
+      const d = b.text.length - (s.originalLen[si] ?? b.text.length);
+      const main = h("button", { class: "slot-main", onclick: (e) => openPicker(gi, si, e.currentTarget) },
+        h("span", { class: "n" }, nameOf(b)), h("span", { class: "t" }, b.text));
+      const len = h("span", { class: "len" + (d > 20 ? " long" : ""), title: isNew ? "Added" : "Characters vs. original" },
+        isNew ? "new" : d === 0 ? "" : (d > 0 ? "+" : "") + d);
+      const move = (j) => { [s.slots[j], s.slots[si]] = [s.slots[si], s.slots[j]]; renderResume(); };
+      const up = iconBtn(ICON.up, "Move up", () => move(si - 1));
+      const down = iconBtn(ICON.down, "Move down", () => move(si + 1));
+      up.disabled = si === 0;
+      down.disabled = si === s.slots.length - 1;
+      list.append(h("li", { class: "slot" }, main, len,
+        h("div", { class: "acts" }, up, down, iconBtn(ICON.x, "Remove", () => { s.slots.splice(si, 1); renderResume(); }, "del"))));
+    });
+    const add = h("button", { class: "btn quiet add-slot", onclick: () => {
+      const unused = s.bank.find((b) => b.text.trim() && !s.slots.includes(b.id));
+      if (!unused) { openLibrary(gi); return; }
+      s.slots.push(unused.id);
+      renderResume();
+    } }, "+ Add bullet");
+    root.append(h("section", { class: "sec" },
+      h("div", { class: "sec-head" },
+        h("div", {}, heading && h("div", { class: "eyebrow" }, heading), h("div", { class: "sec-title" }, title)),
+        h("button", { class: "btn quiet", onclick: () => openLibrary(gi) }, "Edit bullets")),
+      list, add));
+  });
+  schedulePreview();
+}
+
+// Picker: choose which bullet fills a slot.
+let pickerFor = null;
+function openPicker(gi, si, anchor) {
+  if (pickerFor && pickerFor.anchor === anchor) { closePicker(); return; }
+  closePicker();
+  const s = state[gi];
+  const pk = $("#picker");
+  const opts = s.bank.filter((b) => b.text.trim()).map((b) =>
+    h("button", { class: "opt" + (b.id === s.slots[si] ? " cur" : ""), onclick: () => {
+      s.slots[si] = b.id; closePicker(); renderResume();
+    } }, h("span", { class: "n" }, nameOf(b)), h("span", { class: "t" }, b.text)));
+  pk.replaceChildren(...opts, h("div", { class: "foot" },
+    h("button", { class: "btn quiet", onclick: () => { closePicker(); openLibrary(gi); } }, "Edit bullets")));
+  const r = anchor.getBoundingClientRect();
+  pk.style.left = r.left + scrollX + "px";
+  pk.style.top = r.bottom + scrollY + 4 + "px";
+  pk.style.width = Math.max(r.width, 320) + "px";
+  pk.hidden = false;
+  anchor.classList.add("open");
+  pickerFor = { anchor };
+  (pk.querySelector(".opt.cur") || pk.querySelector(".opt"))?.focus();
+}
+function closePicker() {
+  if (!pickerFor) return;
+  pickerFor.anchor.classList.remove("open");
+  $("#picker").hidden = true;
+  pickerFor = null;
+}
+document.addEventListener("mousedown", (e) => {
+  if (pickerFor && !$("#picker").contains(e.target) && !pickerFor.anchor.contains(e.target)) closePicker();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && pickerFor) { const a = pickerFor.anchor; closePicker(); a.focus(); }
+});
+window.addEventListener("resize", closePicker);
+
+// ---------- Bullets view ----------
+function renderLibrary() {
+  const nav = $("#libNav");
+  nav.replaceChildren(...doc.groups.map((g, gi) => {
+    const { heading, title } = secParts(g.label);
+    return h("button", { "aria-current": gi === libSec, onclick: () => { libSec = gi; renderLibrary(); } },
+      heading && h("div", { class: "eyebrow" }, heading),
+      h("div", { class: "r" }, h("span", {}, title), h("span", { class: "c" }, state[gi].bank.length)));
+  }));
+  const s = state[libSec];
+  const { heading, title } = secParts(doc.groups[libSec].label);
+  const cards = h("div", { class: "cards" });
+  s.bank.forEach((b) => cards.append(bulletCard(libSec, b)));
+  if (!s.bank.length) cards.append(h("div", { class: "empty" }, "No bullets yet."));
+  $("#libMain").replaceChildren(
+    h("div", { class: "lib-head" },
+      h("div", {}, heading && h("div", { class: "eyebrow" }, heading), h("div", { class: "sec-title" }, title)),
+      h("button", { class: "btn primary", onclick: () => {
+        const b = { id: uid(), name: "", text: "" };
+        s.bank.unshift(b);
+        save(libSec);
+        renderLibrary();
+        $("#libMain .card .name").focus();
+      } }, "New bullet")),
+    cards);
+  cards.querySelectorAll("textarea").forEach(fit);
+}
+function fit(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+function bulletCard(gi, b) {
+  const s = state[gi];
+  const inUse = () => s.slots.includes(b.id);
+  const count = h("span", {}, `${b.text.length} characters`);
+  const name = h("input", { class: "name", value: b.name || "", placeholder: autoName(b.text) || "Name", "aria-label": "Name" });
+  const text = h("textarea", { rows: 1, placeholder: "Bullet text", "aria-label": "Bullet text" });
+  text.value = b.text;
+  name.oninput = () => { b.name = name.value; save(gi); };
+  text.oninput = () => {
+    b.text = text.value;
+    fit(text);
+    name.placeholder = autoName(b.text) || "Name";
+    count.textContent = `${b.text.length} characters`;
+    save(gi);
+    if (inUse()) schedulePreview();
+  };
+  const del = iconBtn(ICON.trash, "Delete", async () => {
+    if (inUse() && !(await confirmReplace("delete", "Delete bullet?",
+      `“${esc(nameOf(b))}” is in your resume. Deleting it removes it there too.`, "Delete"))) return;
+    s.bank = s.bank.filter((x) => x.id !== b.id);
+    s.slots = s.slots.filter((x) => x !== b.id);
+    save(gi);
+    renderLibrary();
+  }, "del");
+  return h("div", { class: "card" }, name, text,
+    h("div", { class: "meta" }, count, inUse() && h("span", { class: "used" }, "In resume"), h("span", { class: "spacer" }), del));
+}
+
+function buildPlan() {
+  return doc.groups.map((g, gi) => ({
+    indices: g.bullets.map((b) => b.index),
+    texts: state[gi].slots.map((id) => textOf(state[gi], id)),
+  }));
+}
+
+// Live preview: rebuild the .docx on the server exactly as Download would, then render it here.
+let previewTimer = null, previewSeq = 0, lastPlan = "";
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(updatePreview, 250);
+}
+async function updatePreview() {
+  const planJson = JSON.stringify(buildPlan());
+  if (planJson === lastPlan) return;   // e.g. a bank edit that didn't change any slot
+  const seq = ++previewSeq;
+  $("#previewStatus").textContent = "Updating…";
+  try {
+    const blob = await buildDocx();
+    if (seq !== previewSeq) return;     // a newer change is already on its way
+    // Render off-screen first, then swap, so the pane doesn't flash blank.
+    const next = $("#previewNext");
+    next.innerHTML = "";
+    await docx.renderAsync(blob, next, next, {
+      className: "docx", inWrapper: true, breakPages: true,
+      ignoreLastRenderedPageBreak: true, experimental: true,
+    });
+    if (seq !== previewSeq) return;
+    applyDefaultParagraphStyle(next);
+    fixLineHeights(next);
+    // docx-preview lays out tab stops ~500ms after rendering by measuring the page,
+    // so let that finish here, at full size, before the page is moved into the scaled pane.
+    await new Promise((res) => setTimeout(res, 650));
+    if (seq !== previewSeq) return;
+    fixTrailingTabs(next);
+    const out = $("#previewOut");
+    out.replaceChildren(...next.childNodes);
+    lastPlan = planJson;
+    fitPreview();
+    $("#previewStatus").textContent = "";
+  } catch (e) {
+    if (seq === previewSeq) $("#previewStatus").textContent = "Preview failed: " + e.message;
+  }
+}
+// docx-preview differs from Word in a few ways that change the page layout; correct them here.
+// Paragraphs with no style use the default ("Normal") style in Word, but docx-preview only
+// styles their text when the paragraph carries the style's class, so the text falls back to
+// the theme font. Give those paragraphs the default style's class.
+function applyDefaultParagraphStyle(root) {
+  const css = [...root.querySelectorAll("style")].map((s) => s.textContent).join("\n");
+  const m = css.match(/\.docx p,\s*p\.([\w-]+) span/);
+  if (!m) return;
+  root.querySelectorAll("section.docx p").forEach((p) => {
+    if (![...p.classList].some((c) => c.startsWith("docx_"))) p.classList.add(m[1]);
+  });
+}
+
+// Word's "single" line is the font's own line height (ascent + descent + gap), not 1.0 × font size.
+// Measure it from the font the browser actually draws with: a line at line-height "normal"
+// is ascent + descent + line gap, read from the font file itself. Cached per font list.
+const fontLineCache = new Map();
+function fontLine(el) {
+  const cs = getComputedStyle(el);
+  const key = cs.fontFamily + "|" + cs.fontWeight + "|" + cs.fontStyle;
+  if (!fontLineCache.has(key)) {
+    const probe = document.createElement("div");
+    probe.textContent = "Hg";
+    Object.assign(probe.style, {
+      position: "absolute", visibility: "hidden", whiteSpace: "nowrap",
+      fontFamily: cs.fontFamily, fontWeight: cs.fontWeight, fontStyle: cs.fontStyle,
+      fontSize: "100px", lineHeight: "normal",
+    });
+    document.body.appendChild(probe);
+    fontLineCache.set(key, probe.getBoundingClientRect().height / 100);
+    probe.remove();
+  }
+  return fontLineCache.get(key);
+}
+function fixLineHeights(root) {
+  // "Auto" line spacing (e.g. 1.06 lines) comes through as a bare multiplier of the font size.
+  root.querySelectorAll("section.docx [style*='line-height']").forEach((el) => {
+    const v = el.style.lineHeight;
+    if (!/^[\d.]+$/.test(v)) return;   // exact / at-least spacing is in pt: already right
+    const textEl = el.querySelector("span") || el;
+    el.style.lineHeight = (parseFloat(v) * fontLine(textEl)).toFixed(3);
+  });
+  // Paragraphs with no explicit spacing still need Word's single line, not the browser's "normal".
+  root.querySelectorAll("section.docx p").forEach((p) => {
+    if (!p.style.lineHeight) p.style.lineHeight = fontLine(p.querySelector("span") || p).toFixed(3);
+  });
+}
+// A tab with nothing after it (often a right tab at the margin) gets a width that wraps the line.
+function fixTrailingTabs(root) {
+  root.querySelectorAll(".docx-tab-stop").forEach((tab) => {
+    const p = tab.closest("p");
+    if (!p) return;
+    const r = document.createRange();
+    r.setStartAfter(tab);
+    r.setEndAfter(p.lastChild);
+    if (!r.toString().trim()) tab.style.wordSpacing = "0";
+  });
+}
+
+// Shrink the page to the pane's width (never enlarge it).
+function fitPreview() {
+  const out = $("#previewOut");
+  const page = out.querySelector("section.docx");
+  if (!page) return;
+  out.style.zoom = 1;
+  const z = Math.min(1, ($("#previewPane").clientWidth - 4) / (page.offsetWidth + 16));
+  out.style.zoom = z;
+}
+window.addEventListener("resize", fitPreview);
+
+const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+// The edited file, built here from the original upload and the current choices.
+async function buildDocx() {
+  return new Blob([await BulletDocx.rebuild(doc.buffer, buildPlan())], { type: DOCX_TYPE });
+}
+const fileName = () => ($("#fname").value.trim() || "resume").replace(/\.docx$/i, "").replace(/[\\/:*?"<>|]+/g, "_") + ".docx";
+
+// "Save to folder": in Chrome and Edge the page can write straight into a folder the user picks
+// once, replacing a file with the same name. Elsewhere it falls back to a normal download.
+const canSaveToFolder = "showDirectoryPicker" in window;
+let saveDir = null;
+const idb = (mode, fn) => new Promise((resolve, reject) => {
+  const open = indexedDB.open("bullet-swap", 1);
+  open.onupgradeneeded = () => open.result.createObjectStore("kv");
+  open.onerror = () => reject(open.error);
+  open.onsuccess = () => {
+    const req = fn(open.result.transaction("kv", mode).objectStore("kv"));
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  };
+});
+function showSaveDir() {
+  if (!canSaveToFolder) {
+    $("#save").hidden = true;
+    $("#download").classList.add("primary");
+    return;
+  }
+  $("#save").textContent = saveDir ? `Save to “${saveDir.name}”` : "Save to folder…";
+  $("#pickDir").hidden = !saveDir;
+}
+async function pickFolder() {
+  try {
+    saveDir = await window.showDirectoryPicker({ id: "bullet-swap", mode: "readwrite", startIn: "downloads" });
+  } catch (e) {
+    if (e.name !== "AbortError") $("#status").textContent = "Couldn't use that folder";
+    return false;
+  }
+  try { await idb("readwrite", (st) => st.put(saveDir, "saveDir")); } catch {}
+  showSaveDir();
+  return true;
+}
+if (canSaveToFolder) idb("readonly", (st) => st.get("saveDir")).then((h) => { if (h) saveDir = h; showSaveDir(); }).catch(() => showSaveDir());
+else showSaveDir();
+$("#pickDir").onclick = pickFolder;
+
+// Ask before replacing something. Resolves true to go ahead. "Don't ask again" is remembered per kind.
+function confirmReplace(kind, title, bodyHtml, okLabel = "Replace") {
+  if (store.get("noWarn:" + kind, false)) return Promise.resolve(true);
+  const dlg = $("#confirm");
+  $("#confirmTitle").textContent = title;
+  $("#confirmBody").innerHTML = bodyHtml;
+  $("#confirmOk").textContent = okLabel;
+  $("#confirmSkip").checked = false;
+  dlg.returnValue = "";
+  dlg.showModal();
+  return new Promise((resolve) => {
+    dlg.addEventListener("close", () => {
+      const ok = dlg.returnValue === "ok";
+      if (ok && $("#confirmSkip").checked) store.set("noWarn:" + kind, true);
+      resolve(ok);
+    }, { once: true });
+  });
+}
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+
+$("#save").onclick = async () => {
+  if (!saveDir && !(await pickFolder())) return;
+  const name = fileName();
+  try {
+    // A remembered folder needs the user's OK again after the browser restarts.
+    if ((await saveDir.queryPermission({ mode: "readwrite" })) !== "granted" &&
+        (await saveDir.requestPermission({ mode: "readwrite" })) !== "granted") {
+      $("#status").textContent = "No access to that folder";
+      return;
+    }
+    let exists = true;
+    try { await saveDir.getFileHandle(name); } catch { exists = false; }
+    if (exists && !(await confirmReplace("file", "Replace existing file?",
+      `“${esc(name)}” already exists in ${esc(saveDir.name)}.`))) return;
+    $("#status").textContent = "Saving…";
+    const blob = await buildDocx();
+    const fh = await saveDir.getFileHandle(name, { create: true });
+    const w = await fh.createWritable();
+    await w.write(blob);
+    await w.close();
+    $("#status").textContent = `Saved ${name}`;
+  } catch (e) {
+    console.error(e);
+    $("#status").textContent = "Save failed: " + e.message;
+  }
+};
+
+$("#download").onclick = async () => {
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(await buildDocx());
+    a.download = fileName();
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  } catch (e) {
+    console.error(e);
+    $("#status").textContent = "Export failed: " + e.message;
+  }
+};
+
+
+// ---------- Versions ----------
+function vKey() { return "versions:" + doc.name; }
+function refreshVersions() {
+  const sel = $("#versions");
+  sel.replaceChildren(h("option", { value: "" }, "Versions"));
+  Object.keys(store.get(vKey(), {})).forEach((n) => sel.append(h("option", { value: n }, n)));
+}
+function askName(title, value = "") {
+  const dlg = $("#ask");
+  $("#askTitle").textContent = title;
+  $("#askInput").value = value;
+  dlg.returnValue = "";
+  dlg.showModal();
+  $("#askInput").select();
+  return new Promise((resolve) => dlg.addEventListener("close", () =>
+    resolve(dlg.returnValue === "ok" ? $("#askInput").value.trim() || null : null), { once: true }));
+}
+$("#saveV").onclick = async () => {
+  const name = await askName("Save version", $("#versions").value);
+  if (!name) return;
+  const all = store.get(vKey(), {});
+  if (all[name] && !(await confirmReplace("version", "Replace version?",
+    `A version named “${esc(name)}” already exists.`))) return;
+  all[name] = state.map((s) => s.slots.map((id) => textOf(s, id)));
+  store.set(vKey(), all);
+  refreshVersions();
+  $("#versions").value = name;
+  $("#status").textContent = `Saved “${name}”`;
+};
+$("#versions").onchange = (e) => {
+  const v = store.get(vKey(), {})[e.target.value];
+  if (!v) return;
+  state.forEach((s, gi) => {
+    s.slots = (v[gi] || []).map((t) => (s.bank.find((b) => norm(b.text) === norm(t)) || {}).id).filter(Boolean);
+  });
+  showView("resume");
+};
+</script>
+</body>
+</html>
