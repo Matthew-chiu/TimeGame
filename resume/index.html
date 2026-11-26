@@ -61,6 +61,7 @@
   .drop { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 56px 24px; border: 1px dashed var(--faint);
     border-radius: 12px; background: var(--panel); text-align: center; color: var(--muted); }
   .drop.over { border-color: var(--ink); background: var(--hover); }
+  .drop .hint { font-size: 12px; color: var(--faint); }
 
   /* Sub bar: tabs + actions */
   .subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--bg); }
@@ -117,6 +118,9 @@
   #previewPane .docx-wrapper > section.docx { box-shadow: 0 1px 6px rgba(0,0,0,.12); margin-bottom: 12px; }
   #previewStage { position: relative; }
   #previewNext { position: absolute; inset: 0; visibility: hidden; }
+  #previewOut { position: relative; }
+  #previewOut iframe.pdf { display: block; width: 100%; height: calc(100vh - 140px); min-height: 560px; border: 0; background: #fff; }
+  #previewOut iframe.pdf.loading { position: absolute; inset: 0; visibility: hidden; }
 
   /* Bullet list under each experience */
   .bank { margin-top: 8px; padding: 12px; border-radius: 10px; background: var(--hover); }
@@ -182,6 +186,7 @@
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/docx-preview.min.js"></script>
 <script src="docx.js"></script>
+<script src="tex.js"></script>
 </head>
 <body>
 <header class="top">
@@ -189,12 +194,13 @@
   <div class="spacer"></div>
   <div class="file" id="fileInfo" hidden><span class="name" id="docName"></span><label class="btn quiet" for="file">Change</label></div>
 </header>
-<input type="file" id="file" accept=".docx" hidden>
+<input type="file" id="file" accept=".docx,.tex,.zip" hidden>
 
 <div class="upload" id="intro">
   <label class="drop" id="drop" for="file">
     <span class="btn primary">Upload resume</span>
-    <span>or drop a .docx file here</span>
+    <span>or drop a .docx or .tex file here</span>
+    <span class="hint">Overleaf: Menu → Download as source (.zip), then upload that .zip</span>
   </label>
 </div>
 
@@ -207,7 +213,7 @@
     </div>
     <div class="vline"></div>
     <div class="group-ctl" id="saveControls">
-      <label class="namefield"><input id="fname" aria-label="File name"><span>.docx</span></label>
+      <label class="namefield"><input id="fname" aria-label="File name"><span id="fext">.docx</span></label>
       <button id="save" class="btn primary">Save</button>
       <button id="saveToFolder" class="btn">Save to folder…</button>
       </div>
@@ -219,7 +225,7 @@
   <div class="resume" id="viewResume">
     <div id="sections"></div>
     <div id="previewPane">
-      <div id="previewHead"><span>Preview</span><span id="previewStatus"></span></div>
+      <div id="previewHead"><span id="previewLabel">Preview</span><span id="previewStatus"></span></div>
       <div id="previewStage"><div id="previewOut"></div><div id="previewNext"></div></div>
     </div>
   </div>
@@ -316,19 +322,29 @@ new MutationObserver(() => {
 }).observe($("#status"), { childList: true, characterData: true, subtree: true });
 
 async function openFile(f) {
-  if (!/\.docx$/i.test(f.name)) { $("#status").textContent = "That isn't a .docx file"; return; }
+  const ext = ((f.name.match(/\.(docx|tex|zip)$/i) || [])[1] || "").toLowerCase();
+  if (!ext) { $("#status").textContent = "Upload a .docx, a .tex, or an Overleaf source .zip"; return; }
   $("#status").textContent = "Reading…";
-  let buffer, parsed;
+  let next;
   try {
-    buffer = await f.arrayBuffer();
-    parsed = await BulletDocx.parse(buffer);
+    if (ext === "docx") {
+      const buffer = await f.arrayBuffer();
+      const parsed = await BulletDocx.parse(buffer);
+      next = { kind: "docx", name: f.name, buffer, groups: parsed.groups, hyphenate: await autoHyphenation(buffer) };
+    } else {
+      next = { kind: "tex", name: f.name, ...(await readTex(f, ext)) };
+      next.groups = BulletTex.parse(next.tex).groups;
+    }
   } catch (e) {
     console.error(e);
-    $("#status").textContent = "Couldn't read that file";
+    $("#status").textContent = e.userMessage || "Couldn't read that file";
     return;
   }
-  doc = { name: f.name, buffer, groups: parsed.groups, hyphenate: await autoHyphenation(buffer) };
+  if (!next.groups.length) { $("#status").textContent = "Couldn't find any bullet points in that file"; return; }
+  doc = next;
   lastPlan = "";
+  texCache = null;
+  setMode();
   // Each section's bullets are kept in the browser by section name, so they survive re-uploads.
   // Any bullet in the file that's missing from the saved list is added back.
   state = doc.groups.map((g) => {
@@ -343,7 +359,7 @@ async function openFile(f) {
   });
   const total = doc.groups.reduce((n, g) => n + g.bullets.length, 0);
   $("#status").textContent = `${total} bullets in ${doc.groups.length} ${doc.groups.length === 1 ? "section" : "sections"}`;
-  $("#fname").value = f.name.replace(/\.docx$/i, "");
+  $("#fname").value = f.name.replace(/\.(docx|tex|zip)$/i, "");
   $("#docName").textContent = f.name;
   $("#docName").title = f.name;
   $("#intro").hidden = true;
@@ -353,6 +369,98 @@ async function openFile(f) {
   refreshVersions();
   renderResume();
 }
+// ---------- LaTeX (Overleaf) ----------
+// A .tex file, or Overleaf's "Download as source" .zip: the main .tex plus any class files and images.
+async function readTex(f, ext) {
+  if (ext === "tex") {
+    const tex = await f.text();
+    return { tex, zip: null, mainPath: f.name, extra: [], compiler: pickCompiler(tex) };
+  }
+  const zip = await JSZip.loadAsync(await f.arrayBuffer());
+  const files = Object.values(zip.files).filter((z) => !z.dir && !/(^|\/)(__MACOSX|\.)/.test(z.name));
+  const texFiles = files.filter((z) => /\.tex$/i.test(z.name));
+  let main = null, mainTex = "";
+  // The main file is the one with \documentclass; prefer main.tex / resume.tex if there are several.
+  const ranked = [...texFiles].sort((a, b) => (/(^|\/)(main|resume|cv)\.tex$/i.test(b.name) ? 1 : 0) - (/(^|\/)(main|resume|cv)\.tex$/i.test(a.name) ? 1 : 0));
+  for (const z of ranked) {
+    const t = await z.async("string");
+    if (/\\documentclass/.test(t) && /\\begin\{document\}/.test(t)) { main = z; mainTex = t; break; }
+  }
+  if (!main) throw Object.assign(new Error("no main .tex"), { userMessage: "Couldn't find the main .tex file in that .zip" });
+  const dir = main.name.includes("/") ? main.name.slice(0, main.name.lastIndexOf("/") + 1) : "";
+  const extra = [];
+  let allText = mainTex;
+  for (const z of files) {
+    if (z === main || !z.name.startsWith(dir)) continue;
+    if (/\.(cls|sty|tex)$/i.test(z.name)) allText += await z.async("string");
+    extra.push({ path: z.name.slice(dir.length), file: await z.async("base64") });
+  }
+  return { tex: mainTex, zip, mainPath: main.name, extra, compiler: pickCompiler(allText) };
+}
+// Overleaf picks the compiler in project settings, which isn't in the .zip; guess from the source.
+function pickCompiler(src) {
+  const m = src.match(/%\s*!TEX\s+(?:TS-)?program\s*=\s*(\w+)/i);
+  if (m && /^(pdflatex|xelatex|lualatex)$/i.test(m[1])) return m[1].toLowerCase();
+  if (/\\usepackage\s*(\[[^\]]*\])?\s*\{[^}]*\bfontspec\b|\\RequirePackage\s*(\[[^\]]*\])?\s*\{[^}]*\bfontspec\b|\\setmainfont|\\documentclass\s*(\[[^\]]*\])?\s*\{awesome-cv\}/.test(src)) return "xelatex";
+  return "pdflatex";
+}
+const buildTex = () => BulletTex.rebuild(doc.tex, buildPlan());
+
+// Compiled on LaTeX-on-HTTP (latex.ytotech.com): the .tex and its files are sent there, a PDF comes back.
+const LATEX_API = "https://latex.ytotech.com/builds/sync";
+let texCache = null;   // { src, pdf: Promise<Blob> } for the latest source
+function pdfFor(src) {
+  if (texCache && texCache.src === src) return texCache.pdf;
+  const entry = { src, pdf: compileTex(src) };
+  entry.pdf.catch(() => { if (texCache === entry) texCache = null; });
+  texCache = entry;
+  return entry.pdf;
+}
+async function compileTex(src) {
+  let r;
+  try {
+    r = await fetch(LATEX_API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ compiler: doc.compiler, resources: [{ main: true, content: src }, ...doc.extra] }),
+    });
+  } catch {
+    throw new Error("couldn't reach the LaTeX service");
+  }
+  if (r.ok && /pdf/i.test(r.headers.get("content-type") || "")) return await r.blob();
+  let detail = "";
+  try {
+    const body = await r.text();
+    detail = (body.match(/! ([^\\"\n]{3,140})/) || [])[1] || (body.match(/"(?:error|message)"\s*:\s*"([^"]{3,140})"/) || [])[1] || "";
+  } catch {}
+  throw new Error(detail ? `LaTeX error: ${detail}` : `the LaTeX service returned ${r.status}`);
+}
+let pdfUrl = null;
+function showPdf(blob) {
+  const out = $("#previewOut");
+  const url = URL.createObjectURL(blob);
+  const frame = h("iframe", { class: "pdf loading", title: "Resume preview", src: url + "#toolbar=0&navpanes=0&view=FitH" });
+  frame.onload = () => {
+    out.querySelectorAll("iframe.pdf").forEach((f) => { if (f !== frame) f.remove(); });
+    frame.classList.remove("loading");
+    if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    pdfUrl = url;
+  };
+  if (!out.querySelector("iframe.pdf")) out.replaceChildren();   // clear a Word preview from before
+  out.append(frame);
+}
+// Buttons and labels that differ between Word and LaTeX files.
+function setMode() {
+  const tex = doc.kind === "tex";
+  $("#fext").textContent = tex ? ".pdf" : ".docx";
+  $("#pdf").textContent = tex ? (doc.zip ? "Download .zip" : "Download .tex") : "Save as PDF";
+  $("#pdf").title = tex ? "The edited LaTeX source, to open in Overleaf" : "Opens the print window. Choose “Save as PDF”.";
+  $("#download").title = tex ? "Download the PDF" : "";
+  $("#previewLabel").textContent = tex ? "Preview · compiled on latex.ytotech.com" : "Preview";
+  $("#previewOut").replaceChildren();
+  $("#previewOut").style.zoom = 1;
+}
+
 // Word only splits words with hyphens when the file turns on automatic hyphenation.
 async function autoHyphenation(buffer) {
   try {
@@ -555,14 +663,23 @@ function buildPlan() {
 let previewTimer = null, previewSeq = 0, lastPlan = "";
 function schedulePreview() {
   clearTimeout(previewTimer);
-  previewTimer = setTimeout(updatePreview, 250);
+  // LaTeX compiles on a server, so wait for a pause in typing before sending.
+  previewTimer = setTimeout(updatePreview, doc.kind === "tex" ? 900 : 250);
 }
 async function updatePreview() {
   const planJson = JSON.stringify(buildPlan());
   if (planJson === lastPlan) return;   // e.g. a bank edit that didn't change any slot
   const seq = ++previewSeq;
-  $("#previewStatus").textContent = "Updating…";
+  $("#previewStatus").textContent = doc.kind === "tex" ? "Compiling…" : "Updating…";
   try {
+    if (doc.kind === "tex") {
+      const pdf = await pdfFor(buildTex());
+      if (seq !== previewSeq) return;
+      showPdf(pdf);
+      lastPlan = planJson;
+      $("#previewStatus").textContent = "";
+      return;
+    }
     const blob = await buildDocx();
     if (seq !== previewSeq) return;     // a newer change is already on its way
     // Render off-screen first, then swap, so the pane doesn't flash blank.
@@ -666,7 +783,20 @@ const DOCX_TYPE = "application/vnd.openxmlformats-officedocument.wordprocessingm
 async function buildDocx() {
   return new Blob([await BulletDocx.rebuild(doc.buffer, buildPlan())], { type: DOCX_TYPE });
 }
-const fileName = () => ($("#fname").value.trim() || "resume").replace(/\.docx$/i, "").replace(/[\\/:*?"<>|]+/g, "_") + ".docx";
+// What Save, Save to folder and Download write: the .docx for Word files, the compiled PDF for LaTeX.
+const outExt = () => (doc && doc.kind === "tex" ? ".pdf" : ".docx");
+const baseName = () => ($("#fname").value.trim() || "resume").replace(/\.(docx|pdf|tex|zip)$/i, "").replace(/[\\/:*?"<>|]+/g, "_");
+const fileName = () => baseName() + outExt();
+async function buildOutput() {
+  return doc.kind === "tex" ? await pdfFor(buildTex()) : await buildDocx();
+}
+function downloadBlob(blob, name) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+}
 
 // Save: the first save of a file name opens the system save window (starting in Downloads).
 // The chosen file is remembered, so later saves write straight over it. Chrome and Edge only;
@@ -684,15 +814,16 @@ const idb = (mode, fn) => new Promise((resolve, reject) => {
 });
 const fileKey = (name) => "file:" + name.toLowerCase();
 const DOCX_PICK = [{ description: "Word document", accept: { [DOCX_TYPE]: [".docx"] } }];
+const PDF_PICK = [{ description: "PDF", accept: { "application/pdf": [".pdf"] } }];
 async function remember(fh) {
-  $("#fname").value = fh.name.replace(/\.docx$/i, "");
+  $("#fname").value = fh.name.replace(/\.(docx|pdf)$/i, "");
   try { await idb("readwrite", (st) => st.put(fh, fileKey(fh.name))); } catch {}
 }
 // "Save to folder…": the system save window, where any folder (Downloads included) can be picked.
 async function pickFile() {
   let fh;
   try {
-    fh = await window.showSaveFilePicker({ id: "resume", startIn: "downloads", suggestedName: fileName(), types: DOCX_PICK });
+    fh = await window.showSaveFilePicker({ id: "resume", startIn: "downloads", suggestedName: fileName(), types: doc.kind === "tex" ? PDF_PICK : DOCX_PICK });
   } catch (e) {
     if (e.name !== "AbortError") $("#status").textContent = "Couldn't save there";
     return null;
@@ -702,7 +833,7 @@ async function pickFile() {
 }
 async function writeTo(fh) {
   $("#status").textContent = "Saving…";
-  const blob = await buildDocx();
+  const blob = await buildOutput();
   let w;
   try { w = await fh.createWritable(); }
   catch (e) {
@@ -768,6 +899,7 @@ $("#save").onclick = async () => {
 
 // Save as PDF: print the preview through the browser's print window ("Save as PDF").
 $("#pdf").onclick = async () => {
+  if (doc.kind === "tex") { downloadSource(); return; }
   clearTimeout(previewTimer);
   await updatePreview();   // make sure the preview has the latest edits
   const page = $("#previewOut section.docx");
@@ -780,13 +912,24 @@ $("#pdf").onclick = async () => {
   window.print();
 };
 
+// LaTeX files: the edited source, to take back to Overleaf (.zip in, .zip out).
+async function downloadSource() {
+  try {
+    const tex = buildTex();
+    if (!doc.zip) { downloadBlob(new Blob([tex], { type: "text/x-tex" }), baseName() + ".tex"); return; }
+    doc.zip.file(doc.mainPath, tex);
+    downloadBlob(await doc.zip.generateAsync({ type: "blob" }), baseName() + ".zip");
+  } catch (e) {
+    console.error(e);
+    $("#status").textContent = "Export failed: " + e.message;
+  }
+}
+
 $("#download").onclick = async () => {
   try {
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(await buildDocx());
-    a.download = fileName();
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    if (doc.kind === "tex") $("#status").textContent = "Compiling…";
+    downloadBlob(await buildOutput(), fileName());
+    if (doc.kind === "tex") $("#status").textContent = "";
   } catch (e) {
     console.error(e);
     $("#status").textContent = "Export failed: " + e.message;
