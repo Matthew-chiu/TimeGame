@@ -163,6 +163,22 @@
     .len { display: none; }
   }
 </style>
+<style id="printPage"></style>
+<style media="print" id="printCss">
+  /* Print only the preview page(s), at the resume's own page size, with nothing around them. */
+  html, body { margin: 0 !important; background: #fff !important; }
+  .top, .upload, .subbar, #sections, #previewHead, #previewNext, #picker, #status, dialog { display: none !important; }
+  #app, #viewResume { display: block !important; padding: 0 !important; margin: 0 !important; max-width: none !important; }
+  #previewPane { position: static !important; max-height: none !important; overflow: visible !important;
+    border: 0 !important; border-radius: 0 !important; background: none !important; }
+  #previewOut { zoom: 1 !important; }
+  #previewPane .docx-wrapper { display: block !important; padding: 0 !important; background: none !important; }
+  /* No bottom padding: if text runs into the bottom margin (Word allows that), the empty padding
+     would otherwise spill onto a blank extra page. min-height still fills the page. */
+  #previewPane .docx-wrapper > section.docx { box-shadow: none !important; margin: 0 !important; padding-bottom: 0 !important; break-after: page; }
+  #previewPane .docx-wrapper > section.docx:last-child { break-after: auto; }
+  * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+</style>
 <script src="vendor/jszip.min.js"></script>
 <script src="vendor/docx-preview.min.js"></script>
 <script src="docx.js"></script>
@@ -196,6 +212,7 @@
       <button id="saveToFolder" class="btn">Save to folder…</button>
       </div>
       <button id="download" class="btn">Download</button>
+      <button id="pdf" class="btn" title="Opens the print window. Choose “Save as PDF”.">Save as PDF</button>
     </div>
   </div>
 
@@ -310,7 +327,7 @@ async function openFile(f) {
     $("#status").textContent = "Couldn't read that file";
     return;
   }
-  doc = { name: f.name, buffer, groups: parsed.groups };
+  doc = { name: f.name, buffer, groups: parsed.groups, hyphenate: await autoHyphenation(buffer) };
   lastPlan = "";
   // Each section's bullets are kept in the browser by section name, so they survive re-uploads.
   // Any bullet in the file that's missing from the saved list is added back.
@@ -335,6 +352,13 @@ async function openFile(f) {
   openBanks.clear();
   refreshVersions();
   renderResume();
+}
+// Word only splits words with hyphens when the file turns on automatic hyphenation.
+async function autoHyphenation(buffer) {
+  try {
+    const xml = await (await JSZip.loadAsync(buffer)).file("word/settings.xml")?.async("string") || "";
+    return /<w:autoHyphenation(?![^>]*w:val="(?:0|false|off)")[\s/>]/.test(xml);
+  } catch { return false; }
 }
 function save(gi) { store.set("bank:" + doc.groups[gi].label, state[gi].bank); }
 
@@ -551,6 +575,8 @@ async function updatePreview() {
     if (seq !== previewSeq) return;
     applyDefaultParagraphStyle(next);
     fixLineHeights(next);
+    // docx-preview hyphenates everything; match the file's own setting instead.
+    next.querySelectorAll("section.docx").forEach((sec) => { sec.style.hyphens = doc.hyphenate ? "auto" : "manual"; });
     // docx-preview lays out tab stops ~500ms after rendering by measuring the page,
     // so let that finish here, at full size, before the page is moved into the scaled pane.
     await new Promise((res) => setTimeout(res, 650));
@@ -738,6 +764,20 @@ $("#save").onclick = async () => {
     if (!(await confirmReplace("file", "Replace file?", `This saves over “${esc(fh.name)}”.`))) return null;
     return fh;
   }).catch(() => {});
+};
+
+// Save as PDF: print the preview through the browser's print window ("Save as PDF").
+$("#pdf").onclick = async () => {
+  clearTimeout(previewTimer);
+  await updatePreview();   // make sure the preview has the latest edits
+  const page = $("#previewOut section.docx");
+  if (!page) { $("#status").textContent = "Preview isn't ready yet"; return; }
+  // Page size from the resume itself; no margins, so the browser has no room for its own header and footer.
+  $("#printPage").textContent = `@page { size: ${page.style.width || "8.5in"} ${page.style.minHeight || "11in"}; margin: 0; }`;
+  const title = document.title;
+  document.title = fileName().replace(/\.docx$/i, "");   // suggested PDF file name
+  addEventListener("afterprint", () => { document.title = title; }, { once: true });
+  window.print();
 };
 
 $("#download").onclick = async () => {
