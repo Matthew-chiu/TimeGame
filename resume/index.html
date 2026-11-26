@@ -50,11 +50,11 @@
   .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
   .field { height: 32px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--field); min-width: 0; }
   .field:focus { outline: none; border-color: var(--ink); }
-  .icon { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--faint);
+  .icon { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--muted);
     display: inline-grid; place-items: center; flex: none; }
   .icon:hover { background: var(--hover); color: var(--ink); }
   .icon.del:hover { color: var(--danger); }
-  .icon:disabled { opacity: .35; pointer-events: none; }
+  .icon:disabled { opacity: .3; pointer-events: none; }
 
   /* Upload */
   .upload { max-width: 520px; margin: 120px auto; padding: 0 20px; }
@@ -64,9 +64,6 @@
 
   /* Sub bar: tabs + actions */
   .subbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 20px; border-bottom: 1px solid var(--line); background: var(--bg); }
-  .tabs { display: flex; gap: 2px; padding: 3px; background: var(--hover); border-radius: 8px; }
-  .tabs button { border: 0; background: transparent; padding: 4px 14px; border-radius: 6px; color: var(--muted); font-weight: 500; }
-  .tabs button[aria-selected="true"] { background: var(--panel); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
   .group-ctl { display: flex; align-items: center; gap: 6px; }
   .vline { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
   .namefield { display: flex; align-items: center; height: 32px; border: 1px solid var(--line); border-radius: 7px; background: var(--field); }
@@ -92,9 +89,14 @@
   .slot-main .t { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .len { flex: none; width: 46px; text-align: right; font-size: 12px; color: var(--faint); font-variant-numeric: tabular-nums; }
   .len.long { color: var(--warn); }
-  .slot .acts { display: flex; opacity: 0; transition: opacity .1s; }
-  .slot:hover .acts, .slot:focus-within .acts { opacity: 1; }
-  .add-slot { margin-top: 6px; }
+  .slot .acts { display: flex; }
+  .title-row { display: flex; align-items: center; gap: 2px; min-width: 0; }
+  .title-row .icon { color: var(--muted); width: 26px; height: 26px; }
+  .title-input { width: 100%; font-weight: 600; font-size: 15px; padding: 2px 8px; margin: 1px 0;
+    border: 1px solid var(--ink); border-radius: 6px; background: var(--field); outline: none; }
+  .sec-foot { display: flex; gap: 2px; margin-top: 6px; }
+  .toggle .caret { transition: transform .15s; }
+  .toggle[aria-expanded="true"] .caret { transform: rotate(90deg); }
 
   /* Picker */
   .picker { position: absolute; z-index: 30; background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
@@ -116,21 +118,12 @@
   #previewStage { position: relative; }
   #previewNext { position: absolute; inset: 0; visibility: hidden; }
 
-  /* Bullets view */
-  .library { display: grid; grid-template-columns: 260px minmax(0, 1fr); max-width: 1180px; margin: 0 auto; min-height: calc(100vh - 106px); }
-  .side { border-right: 1px solid var(--line); padding: 16px 10px; }
-  .side button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 8px 10px; border-radius: 7px; margin-bottom: 2px; }
-  .side button:hover { background: var(--hover); }
-  .side button[aria-current="true"] { background: var(--sel); }
-  .side .r { display: flex; justify-content: space-between; gap: 8px; }
-  .side .r span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
-  .side .c { color: var(--faint); font-variant-numeric: tabular-nums; }
-  .lib-main { padding: 20px 28px 60px; }
-  .lib-head { display: flex; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
-  .lib-head > div { flex: 1; min-width: 0; }
-  .lib-head .sec-title { font-size: 18px; }
-  .cards { display: grid; gap: 10px; }
-  .card { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); padding: 12px 14px; }
+  /* Bullet list under each experience */
+  .bank { margin-top: 8px; padding: 12px; border-radius: 10px; background: var(--hover); }
+  .bank-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .bank-head span { color: var(--muted); font-size: 12px; }
+  .cards { display: grid; gap: 6px; }
+  .card { border: 1px solid var(--line); border-radius: 8px; background: var(--panel); padding: 8px 10px 6px 12px; }
   .card:focus-within { border-color: var(--faint); }
   .card .name { width: 100%; border: 0; background: transparent; font-weight: 600; padding: 2px 0; outline: none; }
   .card .name::placeholder { color: var(--faint); font-weight: 500; }
@@ -138,7 +131,7 @@
     color: var(--ink); line-height: 1.5; overflow: hidden; }
   .card .meta { display: flex; align-items: center; gap: 10px; margin-top: 4px; color: var(--faint); font-size: 12px; }
   .card .meta .used { color: var(--muted); }
-  .empty { color: var(--muted); padding: 24px 0; }
+  .empty { color: var(--muted); padding: 4px 0; }
 
   /* Toast and dialogs */
   #status { position: fixed; left: 50%; bottom: 20px; transform: translate(-50%, 8px); opacity: 0; pointer-events: none;
@@ -157,11 +150,6 @@
   @media (max-width: 960px) {
     .resume { grid-template-columns: minmax(0, 1fr); }
     #previewPane { position: static; max-height: none; }
-    .library { grid-template-columns: minmax(0, 1fr); }
-    .side { border-right: 0; border-bottom: 1px solid var(--line); display: flex; overflow-x: auto; gap: 4px; padding: 8px; }
-    .side button { width: auto; flex: none; max-width: 220px; }
-    .lib-main { padding: 16px; }
-    .slot .acts { opacity: 1; }
   }
   @media (max-width: 600px) {
     .top { padding: 0 16px; }
@@ -196,10 +184,6 @@
 
 <div id="app" hidden>
   <div class="subbar">
-    <div class="tabs" role="tablist">
-      <button role="tab" id="tabResume" aria-selected="true">Resume</button>
-      <button role="tab" id="tabBullets" aria-selected="false">Bullets</button>
-    </div>
     <div class="spacer"></div>
     <div class="group-ctl">
       <select id="versions" class="field" aria-label="Versions"><option value="">Versions</option></select>
@@ -222,10 +206,6 @@
     </div>
   </div>
 
-  <div class="library" id="viewBullets" hidden>
-    <aside class="side" id="libNav"></aside>
-    <section class="lib-main" id="libMain"></section>
-  </div>
 </div>
 
 <div class="picker" id="picker" hidden></div>
@@ -258,7 +238,7 @@
 const $ = (s) => document.querySelector(s);
 let doc = null;        // { name, buffer, groups }
 let state = [];        // per section: { bank: [{ id, name, text }], slots: [bankId], originalLen: [n] }
-let libSec = 0;        // section shown in the Bullets view
+const openBanks = new Set();   // experiences whose bullet list is expanded
 const uid = () => Math.random().toString(36).slice(2, 9);
 const store = {
   get(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } },
@@ -290,6 +270,8 @@ const ICON = {
   up: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"/></svg>',
   down: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M6 13l6 6 6-6"/></svg>',
   x: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  pencil: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  caret: '<svg class="caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
   trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
 };
 function iconBtn(svg, label, fn, cls = "") {
@@ -349,62 +331,115 @@ async function openFile(f) {
   $("#intro").hidden = true;
   $("#app").hidden = false;
   $("#fileInfo").hidden = false;
-  libSec = 0;
+  openBanks.clear();
   refreshVersions();
-  showView("resume");
+  renderResume();
 }
 function save(gi) { store.set("bank:" + doc.groups[gi].label, state[gi].bank); }
 
-// ---------- Views ----------
-function showView(v) {
-  $("#tabResume").setAttribute("aria-selected", v === "resume");
-  $("#tabBullets").setAttribute("aria-selected", v === "bullets");
-  $("#viewResume").hidden = v !== "resume";
-  $("#viewBullets").hidden = v !== "bullets";
-  closePicker();
-  if (v === "resume") { renderResume(); fitPreview(); } else renderLibrary();
-}
-$("#tabResume").onclick = () => showView("resume");
-$("#tabBullets").onclick = () => showView("bullets");
-function openLibrary(gi) { libSec = gi; showView("bullets"); }
+// ---------- Experiences ----------
+// A custom name for an experience is only a label in this app; the resume itself isn't changed.
+const titleKey = (gi) => "title:" + doc.groups[gi].label;
+const secTitle = (gi) => store.get(titleKey(gi), null) || secParts(doc.groups[gi].label).title;
 
-// ---------- Resume view ----------
 function renderResume() {
-  const root = $("#sections");
-  root.replaceChildren();
-  doc.groups.forEach((g, gi) => {
-    const s = state[gi];
-    const { heading, title } = secParts(g.label);
-    const list = h("ol", { class: "slots" });
-    s.slots.forEach((bid, si) => {
-      const b = s.bank.find((x) => x.id === bid) || { text: "" };
-      const isNew = si >= s.originalLen.length;
-      const d = b.text.length - (s.originalLen[si] ?? b.text.length);
-      const main = h("button", { class: "slot-main", onclick: (e) => openPicker(gi, si, e.currentTarget) },
-        h("span", { class: "n" }, nameOf(b)), h("span", { class: "t" }, b.text));
-      const len = h("span", { class: "len" + (d > 20 ? " long" : ""), title: isNew ? "Added" : "Characters vs. original" },
-        isNew ? "new" : d === 0 ? "" : (d > 0 ? "+" : "") + d);
-      const move = (j) => { [s.slots[j], s.slots[si]] = [s.slots[si], s.slots[j]]; renderResume(); };
-      const up = iconBtn(ICON.up, "Move up", () => move(si - 1));
-      const down = iconBtn(ICON.down, "Move down", () => move(si + 1));
-      up.disabled = si === 0;
-      down.disabled = si === s.slots.length - 1;
-      list.append(h("li", { class: "slot" }, main, len,
-        h("div", { class: "acts" }, up, down, iconBtn(ICON.x, "Remove", () => { s.slots.splice(si, 1); renderResume(); }, "del"))));
-    });
-    const add = h("button", { class: "btn quiet add-slot", onclick: () => {
-      const unused = s.bank.find((b) => b.text.trim() && !s.slots.includes(b.id));
-      if (!unused) { openLibrary(gi); return; }
-      s.slots.push(unused.id);
-      renderResume();
-    } }, "+ Add bullet");
-    root.append(h("section", { class: "sec" },
-      h("div", { class: "sec-head" },
-        h("div", {}, heading && h("div", { class: "eyebrow" }, heading), h("div", { class: "sec-title" }, title)),
-        h("button", { class: "btn quiet", onclick: () => openLibrary(gi) }, "Edit bullets")),
-      list, add));
-  });
+  closePicker();
+  $("#sections").replaceChildren(...doc.groups.map((g, gi) => renderSection(gi)));
   schedulePreview();
+}
+function rerender(gi) {
+  closePicker();
+  const old = document.querySelector(`.sec[data-gi="${gi}"]`);
+  if (old) old.replaceWith(renderSection(gi));
+  schedulePreview();
+}
+
+function renderSection(gi) {
+  const s = state[gi];
+  const { heading } = secParts(doc.groups[gi].label);
+  const titleRow = h("div", { class: "title-row" });
+  const showTitle = () => titleRow.replaceChildren(
+    h("span", { class: "sec-title" }, secTitle(gi)),
+    iconBtn(ICON.pencil, "Rename", () => editTitle(gi, titleRow, showTitle)));
+  showTitle();
+
+  const list = h("ol", { class: "slots" });
+  s.slots.forEach((bid, si) => {
+    const b = s.bank.find((x) => x.id === bid) || { text: "" };
+    const isNew = si >= s.originalLen.length;
+    const d = b.text.length - (s.originalLen[si] ?? b.text.length);
+    const main = h("button", { class: "slot-main", "data-bid": bid, onclick: (e) => openPicker(gi, si, e.currentTarget) },
+      h("span", { class: "n" }, nameOf(b)), h("span", { class: "t" }, b.text));
+    const len = h("span", { class: "len" + (d > 20 ? " long" : ""), title: isNew ? "Added" : "Characters vs. original" },
+      isNew ? "new" : d === 0 ? "" : (d > 0 ? "+" : "") + d);
+    const move = (j) => { [s.slots[j], s.slots[si]] = [s.slots[si], s.slots[j]]; rerender(gi); };
+    const up = iconBtn(ICON.up, "Move up", () => move(si - 1));
+    const down = iconBtn(ICON.down, "Move down", () => move(si + 1));
+    up.disabled = si === 0;
+    down.disabled = si === s.slots.length - 1;
+    list.append(h("li", { class: "slot" }, main, len,
+      h("div", { class: "acts" }, up, down, iconBtn(ICON.x, "Remove", () => { s.slots.splice(si, 1); rerender(gi); }, "del"))));
+  });
+
+  const open = openBanks.has(gi);
+  const toggle = h("button", { class: "btn quiet toggle", "aria-expanded": open, onclick: () => {
+    open ? openBanks.delete(gi) : openBanks.add(gi);
+    rerender(gi);
+  } });
+  toggle.innerHTML = ICON.caret;
+  toggle.append(`Bullets (${s.bank.length})`);
+  const add = h("button", { class: "btn quiet", onclick: () => {
+    const unused = s.bank.find((b) => b.text.trim() && !s.slots.includes(b.id));
+    if (unused) { s.slots.push(unused.id); rerender(gi); return; }
+    openBanks.add(gi);
+    rerender(gi);
+    $(`.sec[data-gi="${gi}"] .bank .btn`)?.focus();
+  } }, "+ Add bullet");
+
+  return h("section", { class: "sec", "data-gi": gi },
+    h("div", { class: "sec-head" }, h("div", {}, heading && h("div", { class: "eyebrow" }, heading), titleRow)),
+    list,
+    h("div", { class: "sec-foot" }, add, toggle),
+    open && renderBank(gi));
+}
+
+function editTitle(gi, row, showTitle) {
+  const input = h("input", { class: "title-input", value: secTitle(gi), "aria-label": "Experience name" });
+  row.replaceChildren(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const finish = (keep) => {
+    if (done) return;
+    done = true;
+    if (keep) {
+      const v = input.value.trim();
+      if (!v || v === secParts(doc.groups[gi].label).title) { try { localStorage.removeItem(titleKey(gi)); } catch {} }
+      else store.set(titleKey(gi), v);
+    }
+    showTitle();
+  };
+  input.onkeydown = (e) => {
+    if (e.key === "Enter") { e.preventDefault(); finish(true); }
+    if (e.key === "Escape") finish(false);
+  };
+  input.onblur = () => finish(true);
+}
+
+function renderBank(gi) {
+  const s = state[gi];
+  const cards = h("div", { class: "cards" });
+  s.bank.forEach((b) => cards.append(bulletCard(gi, b)));
+  if (!s.bank.length) cards.append(h("div", { class: "empty" }, "No bullets yet."));
+  return h("div", { class: "bank" },
+    h("div", { class: "bank-head" }, h("span", {}, "Bullets for this experience"),
+      h("button", { class: "btn", onclick: () => {
+        s.bank.unshift({ id: uid(), name: "", text: "" });
+        save(gi);
+        rerender(gi);
+        $(`.sec[data-gi="${gi}"] .card .name`)?.focus();
+      } }, "New bullet")),
+    cards);
 }
 
 // Picker: choose which bullet fills a slot.
@@ -416,10 +451,14 @@ function openPicker(gi, si, anchor) {
   const pk = $("#picker");
   const opts = s.bank.filter((b) => b.text.trim()).map((b) =>
     h("button", { class: "opt" + (b.id === s.slots[si] ? " cur" : ""), onclick: () => {
-      s.slots[si] = b.id; closePicker(); renderResume();
+      s.slots[si] = b.id; rerender(gi);
     } }, h("span", { class: "n" }, nameOf(b)), h("span", { class: "t" }, b.text)));
   pk.replaceChildren(...opts, h("div", { class: "foot" },
-    h("button", { class: "btn quiet", onclick: () => { closePicker(); openLibrary(gi); } }, "Edit bullets")));
+    h("button", { class: "btn quiet", onclick: () => {
+      openBanks.add(gi);
+      rerender(gi);
+      $(`.sec[data-gi="${gi}"] .bank`)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    } }, "Edit bullets")));
   const r = anchor.getBoundingClientRect();
   pk.style.left = r.left + scrollX + "px";
   pk.style.top = r.bottom + scrollY + 4 + "px";
@@ -443,33 +482,7 @@ document.addEventListener("keydown", (e) => {
 });
 window.addEventListener("resize", closePicker);
 
-// ---------- Bullets view ----------
-function renderLibrary() {
-  const nav = $("#libNav");
-  nav.replaceChildren(...doc.groups.map((g, gi) => {
-    const { heading, title } = secParts(g.label);
-    return h("button", { "aria-current": gi === libSec, onclick: () => { libSec = gi; renderLibrary(); } },
-      heading && h("div", { class: "eyebrow" }, heading),
-      h("div", { class: "r" }, h("span", {}, title), h("span", { class: "c" }, state[gi].bank.length)));
-  }));
-  const s = state[libSec];
-  const { heading, title } = secParts(doc.groups[libSec].label);
-  const cards = h("div", { class: "cards" });
-  s.bank.forEach((b) => cards.append(bulletCard(libSec, b)));
-  if (!s.bank.length) cards.append(h("div", { class: "empty" }, "No bullets yet."));
-  $("#libMain").replaceChildren(
-    h("div", { class: "lib-head" },
-      h("div", {}, heading && h("div", { class: "eyebrow" }, heading), h("div", { class: "sec-title" }, title)),
-      h("button", { class: "btn primary", onclick: () => {
-        const b = { id: uid(), name: "", text: "" };
-        s.bank.unshift(b);
-        save(libSec);
-        renderLibrary();
-        $("#libMain .card .name").focus();
-      } }, "New bullet")),
-    cards);
-  cards.querySelectorAll("textarea").forEach(fit);
-}
+// One bullet in an experience's list: editable name and text.
 function fit(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
 function bulletCard(gi, b) {
   const s = state[gi];
@@ -478,13 +491,19 @@ function bulletCard(gi, b) {
   const name = h("input", { class: "name", value: b.name || "", placeholder: autoName(b.text) || "Name", "aria-label": "Name" });
   const text = h("textarea", { rows: 1, placeholder: "Bullet text", "aria-label": "Bullet text" });
   text.value = b.text;
-  name.oninput = () => { b.name = name.value; save(gi); };
+  // Keep the matching rows above in sync while typing, without re-rendering (which would drop focus).
+  const syncRows = () => document.querySelectorAll(`.sec[data-gi="${gi}"] .slot-main[data-bid="${b.id}"]`).forEach((m) => {
+    m.querySelector(".n").textContent = nameOf(b);
+    m.querySelector(".t").textContent = b.text;
+  });
+  name.oninput = () => { b.name = name.value; save(gi); syncRows(); };
   text.oninput = () => {
     b.text = text.value;
     fit(text);
     name.placeholder = autoName(b.text) || "Name";
     count.textContent = `${b.text.length} characters`;
     save(gi);
+    syncRows();
     if (inUse()) schedulePreview();
   };
   const del = iconBtn(ICON.trash, "Delete", async () => {
@@ -493,8 +512,9 @@ function bulletCard(gi, b) {
     s.bank = s.bank.filter((x) => x.id !== b.id);
     s.slots = s.slots.filter((x) => x !== b.id);
     save(gi);
-    renderLibrary();
+    rerender(gi);
   }, "del");
+  requestAnimationFrame(() => fit(text));
   return h("div", { class: "card" }, name, text,
     h("div", { class: "meta" }, count, inUse() && h("span", { class: "used" }, "In resume"), h("span", { class: "spacer" }), del));
 }
@@ -637,8 +657,8 @@ const idb = (mode, fn) => new Promise((resolve, reject) => {
 });
 function showSaveDir() {
   if (!canSaveToFolder) {
-    $("#save").hidden = true;
-    $("#download").classList.add("primary");
+    $("#save").textContent = "Save (replace)";
+    $("#save").title = "Needs Chrome or Edge";
     return;
   }
   $("#save").textContent = saveDir ? `Save to “${saveDir.name}”` : "Save to folder…";
@@ -680,6 +700,8 @@ function confirmReplace(kind, title, bodyHtml, okLabel = "Replace") {
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 $("#save").onclick = async () => {
+  // Only Chrome and Edge let a web page write over a file. Elsewhere, point to Download.
+  if (!canSaveToFolder) { $("#status").textContent = "Saving over a file needs Chrome or Edge. Use Download here."; return; }
   if (!saveDir && !(await pickFolder())) return;
   const name = fileName();
   try {
@@ -755,7 +777,7 @@ $("#versions").onchange = (e) => {
   state.forEach((s, gi) => {
     s.slots = (v[gi] || []).map((t) => (s.bank.find((b) => norm(b.text) === norm(t)) || {}).id).filter(Boolean);
   });
-  showView("resume");
+  renderResume();
 };
 </script>
 </body>
