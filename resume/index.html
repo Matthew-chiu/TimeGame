@@ -48,13 +48,6 @@
   .btn.quiet { border-color: transparent; background: transparent; color: var(--muted); padding: 0 8px; }
   .btn.quiet:hover { color: var(--ink); background: var(--hover); }
   .btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
-  .split { position: relative; display: inline-flex; }
-  .split #save { border-radius: 7px 0 0 7px; }
-  .split .more { border-radius: 0 7px 7px 0; padding: 0 8px; border-left: 1px solid color-mix(in srgb, var(--accent-ink) 25%, transparent); }
-  .menu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 30; min-width: 190px; padding: 4px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 12px 32px rgba(0,0,0,.14); }
-  .menu button { display: block; width: 100%; text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: 6px; }
-  .menu button:hover, .menu button:focus-visible { background: var(--hover); outline: none; }
   .field { height: 32px; padding: 0 10px; border-radius: 7px; border: 1px solid var(--line); background: var(--field); min-width: 0; }
   .field:focus { outline: none; border-color: var(--ink); }
   .icon { width: 28px; height: 28px; border: 0; border-radius: 6px; background: transparent; color: var(--muted);
@@ -199,12 +192,8 @@
     <div class="vline"></div>
     <div class="group-ctl" id="saveControls">
       <label class="namefield"><input id="fname" aria-label="File name"><span>.docx</span></label>
-      <div class="split">
-        <button id="save" class="btn primary">Save</button><button id="saveMore" class="btn primary more" aria-label="More save options" aria-haspopup="menu" aria-expanded="false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>
-        <div class="menu" id="saveMenu" role="menu" hidden>
-          <button role="menuitem" id="saveToFolder">Save to folder…</button>
-          <button role="menuitem" id="replaceFile">Replace a file…</button>
-        </div>
+      <button id="save" class="btn primary">Save</button>
+      <button id="saveToFolder" class="btn">Save to folder…</button>
       </div>
       <button id="download" class="btn">Download</button>
     </div>
@@ -685,20 +674,6 @@ async function pickFile() {
   await remember(fh);
   return fh;
 }
-// "Replace a file…": pick an existing .docx and write over it.
-async function pickExisting() {
-  let fh;
-  try {
-    [fh] = await window.showOpenFilePicker({ id: "resume", startIn: "downloads", types: DOCX_PICK });
-    if ((await fh.requestPermission({ mode: "readwrite" })) !== "granted") return null;
-  } catch (e) {
-    if (e.name !== "AbortError") $("#status").textContent = "Couldn't open that file";
-    return null;
-  }
-  if (!(await confirmReplace("file", "Replace file?", `This saves over “${esc(fh.name)}”.`))) return null;
-  await remember(fh);
-  return fh;
-}
 async function writeTo(fh) {
   $("#status").textContent = "Saving…";
   const blob = await buildDocx();
@@ -707,7 +682,8 @@ async function writeTo(fh) {
   catch (e) {
     if (e.name !== "NotFoundError") throw e;
     $("#status").textContent = `${fh.name} was moved or deleted`;
-    toggleSaveMenu(true);
+    const again = await pickFile();
+    if (again) await writeTo(again);
     return;
   }
   await w.write(blob);
@@ -715,20 +691,11 @@ async function writeTo(fh) {
   $("#status").textContent = `Saved ${fh.name}`;
 }
 if (!canSave) {
-  $("#saveMore").hidden = true;
-  $("#save").style.borderRadius = "7px";
+  $("#saveToFolder").hidden = true;
   $("#save").title = "Needs Chrome or Edge";
 }
-function toggleSaveMenu(open = $("#saveMenu").hidden) {
-  $("#saveMenu").hidden = !open;
-  $("#saveMore").setAttribute("aria-expanded", open);
-  if (open) $("#saveToFolder").focus();
-}
-$("#saveMore").onclick = () => toggleSaveMenu();
-document.addEventListener("mousedown", (e) => { if (!e.target.closest(".split")) toggleSaveMenu(false); });
-document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("#saveMenu").hidden) { toggleSaveMenu(false); $("#saveMore").focus(); } });
 
-// Ask before replacing something. Resolves true to go ahead. "Don't ask again" is remembered per kind.
+// Ask before replacing or deleting something. Resolves true to go ahead. "Don't ask again" is remembered per kind.
 function confirmReplace(kind, title, bodyHtml, okLabel = "Replace") {
   if (store.get("noWarn:" + kind, false)) return Promise.resolve(true);
   const dlg = $("#confirm");
@@ -749,7 +716,6 @@ function confirmReplace(kind, title, bodyHtml, okLabel = "Replace") {
 const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 
 async function saveWith(getHandle) {
-  toggleSaveMenu(false);
   try {
     const fh = await getHandle();
     if (fh) await writeTo(fh);
@@ -759,17 +725,16 @@ async function saveWith(getHandle) {
   }
 }
 $("#saveToFolder").onclick = () => saveWith(pickFile);
-$("#replaceFile").onclick = () => saveWith(pickExisting);
-// Main button: save again to the file last used for this name; first time, show the options.
+// Main button: save again to the file last used for this name; first time, choose where.
 $("#save").onclick = async () => {
   if (!canSave) { $("#status").textContent = "Saving over a file needs Chrome or Edge. Use Download here."; return; }
   let fh = null;
   try { fh = await idb("readonly", (st) => st.get(fileKey(fileName()))); } catch {}
-  if (!fh) { toggleSaveMenu(true); return; }
+  if (!fh) { await saveWith(pickFile); return; }
   await saveWith(async () => {
     const ok = (await fh.queryPermission({ mode: "readwrite" })) === "granted" ||
                (await fh.requestPermission({ mode: "readwrite" })) === "granted";
-    if (!ok) { toggleSaveMenu(true); return null; }
+    if (!ok) return pickFile();
     if (!(await confirmReplace("file", "Replace file?", `This saves over “${esc(fh.name)}”.`))) return null;
     return fh;
   }).catch(() => {});
